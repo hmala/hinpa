@@ -60,6 +60,9 @@
                                                        </div>
                                                    </div>
 												  </div>
+												  <li class="nav-item">
+                                    <a class="nav-link" href="{{ route('register') }}">{{ __('Register') }}</a>
+                              
                                                     <button type="submit" class="btn btn-main-primary btn-block">
                                                     {{ __('تسجيل الدخول') }}
                                                     </button>
