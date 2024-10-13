@@ -60,6 +60,8 @@
                                                        </div>
                                                    </div>
 												  </div>
+												  <a href="{{ route('register') }}" class="ml-4 text-sm text-gray-700 dark:text-gray-500 underline">Register</a>
+
                                                     <button type="submit" class="btn btn-main-primary btn-block">
                                                     {{ __('تسجيل الدخول') }}
                                                     </button>
