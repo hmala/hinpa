@@ -13,16 +13,17 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('mohs', function (Blueprint $table) {
-            $table->integer('mohcode');
-            $table->string('mohname');
-            $table->softDeletes();
-            $table->id();
-            $table->timestamps();
-            $table->string('Created_by');
-        });
+        if (!Schema::hasTable('mohs')) {
+            Schema::create('mohs', function (Blueprint $table) {
+                $table->id();
+                $table->integer('mohcode');
+                $table->string('mohname');
+                $table->timestamps();
+                $table->softDeletes();
+            });
+        
     }
-
+}
     /**
      * Reverse the migrations.
      *

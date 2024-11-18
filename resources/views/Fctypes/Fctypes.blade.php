@@ -1,3 +1,4 @@
+
 @extends('layouts.master')
 @section('title')
 الدوائر
@@ -68,46 +69,44 @@
 							<div class="card-header pb-0">
 								<div class="d-flex justify-content-between">
 								<div class="col-sm-6 col-md-4 col-xl-3">
-										<a class="modal-effect btn btn-outline-primary btn-block" data-effect="effect-scale" data-toggle="modal" href="#modaldemo8">اظافة دائرة </a>
+										<a class="modal-effect btn btn-outline-primary btn-block" data-effect="effect-scale" data-toggle="modal" href="#exampleModal">اظافة دائرة </a>
 									</div>
 								</div>
 							</div>
 							<div class="card-body">
 								<div class="table-responsive">
-									<table id="example1" class="table key-buttons text-md-nowrap">
+									<table id="example1" class="table key-buttons text-md-nowrap"  data-page-length='50'>
 										<thead>
 											<tr>
 												<th class="border-bottom-0">#</th>
-												<th class="border-bottom-0">رمز دائرة الصحة</th>
-												<th class="border-bottom-0">أسم الدائرة</th>
-												<th class="border-bottom-0">ألعمليات</th>
+												<th class="border-bottom-0">الرمز</th>
+												<th class="border-bottom-0">نوع المؤسسة</th>
 											</tr>
 										</thead>
 										<tbody>
-											<?php $i=0?>
-										@foreach($mohs as $x)
-										<?php $i++?>
+										
+                                        <?php $i = 0; ?>
+                                @foreach ($Fctypes as $x)
+                                    <?php $i++; ?>
 										<tr>
-												<td>{{$i}}</td>
-												<td>{{$x->mohcode}}</td>
-												<td>{{$x->mohname}}</td>
-												<td>
-                                      
-                                            <a class="modal-effect btn btn-sm btn-info" data-effect="effect-scale"
-                                                data-id="{{ $x->id }}" data-mohcode="{{ $x->mohcode }}"
-                                                data-mohname="{{ $x->mohname }}" data-toggle="modal"
-                                                href="#exampleModal2" title="تعديل"><i class="las la-pen"></i></a>
-                                      
+                                        <td>{{ $i }}</td>
+                                        <td>{{ $x->Fname}}</td>
+                                        <td>{{ $x->moh->mohname}}</td>
+                                        <td>
+                                        <button class="btn btn-outline-success btn-sm"
+                                                data-name="{{ $x->Fname }}" data-pro_id="{{ $x->id }}"
+                                                data-section_name="{{ $x->moh->mohname }}"
+                                              data-toggle="modal"
+                                                data-target="#edit_Product">تعديل</button>
 
-                                      
-                                            <a class="modal-effect btn btn-sm btn-danger" data-effect="effect-scale"
-                                                data-id="{{ $x->id }}" data-mohname="{{ $x->mohname }}"
-                                                data-toggle="modal" href="#modaldemo9" title="حذف"><i
-                                                    class="las la-trash"></i></a>
-                                     
+                                            <button class="btn btn-outline-danger btn-sm " data-pro_id="{{ $x->id }}"
+                                                data-product_name="{{ $x->Fname }}" data-toggle="modal"
+                                                data-target="#modaldemo9">حذف</button>
                                     </td>
+                                      
+                                          
 											</tr>
-										@endforeach	
+                                            @endforeach
 										</tbody>
 									</table>
 								</div>
@@ -115,88 +114,104 @@
 						</div>
 					</div>
 					<!--/div-->
-					<div class="modal" id="modaldemo8">
-			<div class="modal-dialog" role="document">
-				<div class="modal-content modal-content-demo">
-					<div class="modal-header">
-						<h6 class="modal-title">Basic Modal</h6><button aria-label="Close" class="close" data-dismiss="modal" type="button"><span aria-hidden="true">&times;</span></button>
-					</div>
-					<div class="modal-body">
-					<form action="{{ route('mohs.store') }}" method="post">
+					<div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="exampleModalLabel">اضافة منتج</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <form action="{{ route('Fctypes.store') }}" method="post">
+                        <!-- Product_name
+                            section_id -->
                         {{ csrf_field() }}
+                        <div class="modal-body">
+                            <div class="form-group">
+                                <label for="exampleInputEmail1">اسم المنتج</label>
+                                <input type="text" class="form-control" id="Product_name" name="Product_name" required>
+                            </div>
 
-                        <div class="form-group">
-                            <label for="exampleInputEmail1">رمز الدائرة</label>
-                            <input type="text" class="form-control" id="mohcode" name="mohcode">
+                            <label class="my-1 mr-2" for="inlineFormCustomSelectPref">القسم</label>
+                            <select name="sname" id="sname" class="form-control" required>
+                                <option value="" selected disabled> --حدد القسم--</option>
+                                @foreach ($mohs as $mohs)
+                                    <option value="{{ $mohs->id}}">{{ $mohs->mohname }}</option>
+                                @endforeach
+                            </select>
+
+                            
                         </div>
-
-                        <div class="form-group">
-                            <label for="exampleInputEmail1">اسم الدائرة</label>
-                            <input type="text" class="form-control" id="mohname" name="mohname">
-                        </div>
-
                         <div class="modal-footer">
                             <button type="submit" class="btn btn-success">تاكيد</button>
                             <button type="button" class="btn btn-secondary" data-dismiss="modal">اغلاق</button>
                         </div>
                     </form>
-					
-				</div>
-			</div>
-		</div>
-					<!--div-->
-				
-				</div>
-				<div class="modal fade" id="exampleModal2" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
-        aria-hidden="true">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="exampleModalLabel">تعديل القسم</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
                 </div>
-                <div class="modal-body">
-
-                    <form action="mohs/update" method="post" autocomplete="off">
-                        {{ method_field('patch') }}
-                        {{ csrf_field() }}
-                        <div class="form-group">
-                            <input type="hidden" name="id" id="id" value="">
-                            <label for="recipient-name" class="col-form-label">اسم القسم:</label>
-                            <input class="form-control" name="mohcode" id="mohcode" type="text">
-                        </div>
-                        <div class="form-group">
-                            <label for="message-text" class="col-form-label">ملاحظات:</label>
-                            <input class="form-control" id="mohname" name="mohname"></textarea>
-                        </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="submit" class="btn btn-primary">تاكيد</button>
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">اغلاق</button>
-                </div>
-                </form>
             </div>
         </div>
-    </div>
-	    <div class="modal fade" id="modaldemo9" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+@php
+    use App\Models\Mohs;
+    $mohs = $mohs::all(); // استرداد جميع السجلات من جدول Moh كمجموعة
+@endphp
+
+<div class="modal fade" id="edit_Product" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">تعديل منتج</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form action='Fctypes/update' method="post">
+                {{ method_field('patch') }}
+                {{ csrf_field() }}
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="title">اسم المنتج :</label>
+                        <input type="hidden" class="form-control" name="pro_id" id="pro_id" value="">
+                        <input type="text" class="form-control" name="Product_name" id="Product_name">
+                    </div>
+
+                    <label class="my-1 mr-2" for="inlineFormCustomSelectPref">القسم</label>
+                    <select name="section_name" id="section_name" class="custom-select my-1 mr-sm-2" required>
+                       
+                            @foreach ($mohs as $moh)
+                                <option>{{ $moh->mohname }}</option>
+                            @endforeach
+                      
+                    </select>
+
+                   
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">تعديل البيانات</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">اغلاق</button>
+                    </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="modal fade" id="modaldemo9" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
             aria-hidden="true">
             <div class="modal-dialog" role="document">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title">حذف المؤسسة</h5>
+                        <h5 class="modal-title">حذف المنتج</h5>
                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                             <span aria-hidden="true">&times;</span>
                         </button>
                     </div>
-                    <form action="mohs/destroy" method="post">
+                    <form action="Fctypes/destroy" method="post">
                         {{ method_field('delete') }}
                         {{ csrf_field() }}
                         <div class="modal-body">
                             <p>هل انت متاكد من عملية الحذف ؟</p><br>
-                            <input type="hidden" name="id" id="id" value="">
-                            <input class="form-control" name="mohname" id="mohname" type="text" readonly>
+                            <input type="hidden" name="pro_id" id="pro_id" value="">
+                            <input class="form-control" name="product_name" id="product_name" type="text" readonly>
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-dismiss="modal">الغاء</button>
@@ -206,10 +221,13 @@
                 </div>
             </div>
         </div>
-			<!-- /row -->
-			</div>
-			<!-- Container closed -->
-		</div>
+
+
+    </div>
+    <!-- row closed -->
+    </div>
+    <!-- Container closed -->
+    </div>
 		<!-- main-content closed -->
 @endsection
 @section('js')
@@ -234,25 +252,29 @@
 <script src="{{URL::asset('assets/js/table-data.js')}}"></script>
 <script src="{{URL::asset('assets/js/modal.js')}}"></script>
 <script>
-    $('#exampleModal2').on('show.bs.modal', function(event) {
-        var button = $(event.relatedTarget)
-        var id = button.data('id')
-        var mohcode = button.data('mohcode')
-        var mohname = button.data('mohname')
-        var modal = $(this)
-        modal.find('.modal-body #id').val(id);
-        modal.find('.modal-body #mohcode').val(mohcode);
-        modal.find('.modal-body #mohname').val(mohname);
-    })
-    $('#modaldemo9').on('show.bs.modal', function(event) {
+        $('#edit_Product').on('show.bs.modal', function(event) {
             var button = $(event.relatedTarget)
-            var id = button.data('id')
-            var mohname = button.data('mohname')
+            var Product_name = button.data('name')
+            var section_name = button.data('section_name')
+            var pro_id = button.data('pro_id')
+            var description = button.data('description')
             var modal = $(this)
-
-            modal.find('.modal-body #id').val(id);
-            modal.find('.modal-body #mohname').val(mohname);
+            modal.find('.modal-body #Product_name').val(Product_name);
+            modal.find('.modal-body #section_name').val(section_name);
+            modal.find('.modal-body #pro_id').val(pro_id);
         })
 
-</script>
+
+        $('#modaldemo9').on('show.bs.modal', function(event) {
+            var button = $(event.relatedTarget)
+            var pro_id = button.data('pro_id')
+            var product_name = button.data('product_name')
+            var modal = $(this)
+
+            modal.find('.modal-body #pro_id').val(pro_id);
+            modal.find('.modal-body #product_name').val(product_name);
+        })
+
+    </script>
+
 @endsection

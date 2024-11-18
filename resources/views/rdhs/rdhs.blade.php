@@ -17,7 +17,7 @@
 				<div class="breadcrumb-header justify-content-between">
 					<div class="my-auto">
 						<div class="d-flex">
-							<h4 class="content-title mb-0 my-auto">دوائر الصحة</h4>
+							<h4 class="content-title mb-0 my-auto">الردهات</h4>
 						</div>
 					</div>
 					
@@ -78,30 +78,30 @@
 										<thead>
 											<tr>
 												<th class="border-bottom-0">#</th>
-												<th class="border-bottom-0">رمز دائرة الصحة</th>
-												<th class="border-bottom-0">أسم الدائرة</th>
+												<th class="border-bottom-0">رمز الردهة </th>
+												<th class="border-bottom-0">نوع الردهة</th>
 												<th class="border-bottom-0">ألعمليات</th>
 											</tr>
 										</thead>
 										<tbody>
 											<?php $i=0?>
-										@foreach($mohs as $x)
+										@foreach($rdhs as $x)
 										<?php $i++?>
 										<tr>
 												<td>{{$i}}</td>
-												<td>{{$x->mohcode}}</td>
-												<td>{{$x->mohname}}</td>
+												<td>{{$x->Spcuno}}</td>
+												<td>{{$x->Spcuname}}</td>
 												<td>
                                       
                                             <a class="modal-effect btn btn-sm btn-info" data-effect="effect-scale"
-                                                data-id="{{ $x->id }}" data-mohcode="{{ $x->mohcode }}"
-                                                data-mohname="{{ $x->mohname }}" data-toggle="modal"
+                                                data-id="{{ $x->id }}" data-mohcode="{{ $x->Spcuno }}"
+                                                data-mohname="{{ $x->Spcuname }}" data-toggle="modal"
                                                 href="#exampleModal2" title="تعديل"><i class="las la-pen"></i></a>
                                       
 
                                       
                                             <a class="modal-effect btn btn-sm btn-danger" data-effect="effect-scale"
-                                                data-id="{{ $x->id }}" data-mohname="{{ $x->mohname }}"
+                                                data-id="{{ $x->id }}" data-Spcuname="{{ $x->Spcuname }}"
                                                 data-toggle="modal" href="#modaldemo9" title="حذف"><i
                                                     class="las la-trash"></i></a>
                                      
@@ -122,17 +122,17 @@
 						<h6 class="modal-title">Basic Modal</h6><button aria-label="Close" class="close" data-dismiss="modal" type="button"><span aria-hidden="true">&times;</span></button>
 					</div>
 					<div class="modal-body">
-					<form action="{{ route('mohs.store') }}" method="post">
+					<form action="{{ route('rdhs.store') }}" method="post">
                         {{ csrf_field() }}
 
                         <div class="form-group">
                             <label for="exampleInputEmail1">رمز الدائرة</label>
-                            <input type="text" class="form-control" id="mohcode" name="mohcode">
+                            <input type="text" class="form-control" id="Spcuno" name="Spcuno">
                         </div>
 
                         <div class="form-group">
                             <label for="exampleInputEmail1">اسم الدائرة</label>
-                            <input type="text" class="form-control" id="mohname" name="mohname">
+                            <input type="text" class="form-control" id="Spcuname" name="Spcuname">
                         </div>
 
                         <div class="modal-footer">
@@ -147,7 +147,7 @@
 					<!--div-->
 				
 				</div>
-				<div class="modal fade" id="exampleModal2" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+                <div class="modal fade" id="exampleModal2" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
         aria-hidden="true">
         <div class="modal-dialog" role="document">
             <div class="modal-content">
@@ -159,7 +159,7 @@
                 </div>
                 <div class="modal-body">
 
-                    <form action="mohs/update" method="post" autocomplete="off">
+                    <form action="rdhs/update" method="post" autocomplete="off">
                         {{ method_field('patch') }}
                         {{ csrf_field() }}
                         <div class="form-group">
@@ -190,13 +190,13 @@
                             <span aria-hidden="true">&times;</span>
                         </button>
                     </div>
-                    <form action="mohs/destroy" method="post">
+                    <form action="rdhs/destroy" method="post">
                         {{ method_field('delete') }}
                         {{ csrf_field() }}
                         <div class="modal-body">
                             <p>هل انت متاكد من عملية الحذف ؟</p><br>
                             <input type="hidden" name="id" id="id" value="">
-                            <input class="form-control" name="mohname" id="mohname" type="text" readonly>
+                            <input class="form-control" name="Spcuname" id="Spcuname" type="text" readonly>
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-dismiss="modal">الغاء</button>
@@ -234,7 +234,7 @@
 <script src="{{URL::asset('assets/js/table-data.js')}}"></script>
 <script src="{{URL::asset('assets/js/modal.js')}}"></script>
 <script>
-    $('#exampleModal2').on('show.bs.modal', function(event) {
+   $('#exampleModal2').on('show.bs.modal', function(event) {
         var button = $(event.relatedTarget)
         var id = button.data('id')
         var mohcode = button.data('mohcode')
@@ -247,11 +247,11 @@
     $('#modaldemo9').on('show.bs.modal', function(event) {
             var button = $(event.relatedTarget)
             var id = button.data('id')
-            var mohname = button.data('mohname')
+            var Spcuname = button.data('Spcuname')
             var modal = $(this)
 
             modal.find('.modal-body #id').val(id);
-            modal.find('.modal-body #mohname').val(mohname);
+            modal.find('.modal-body #Spcuname').val(Spcuname);
         })
 
 </script>

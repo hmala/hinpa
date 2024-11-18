@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Providers\RouteServiceProvider;
-
 use App\Models\User;
+use App\Models\mohs; // هنا استيراد النموذج
 use Illuminate\Foundation\Auth\RegistersUsers;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -57,6 +57,8 @@ class RegisterController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'string', 'min:6', 'confirmed'],
+           'section_id' => ['required', 'integer']
+           
         ]);
     }
     /**
@@ -72,23 +74,24 @@ class RegisterController extends Controller
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
             'google2fa_secret' => $data['google2fa_secret'],
+            'mohcode'=>$data['section_id'],
         ]);
     }
     public function register(Request $request)
     {
         $this->validator($request->all())->validate();
-  
         $google2fa = app('pragmarx.google2fa');
   
         $registration_data = $request->all();
-  
+        
         $registration_data["google2fa_secret"] = $google2fa->generateSecretKey();
   
         $request->session()->flash('registration_data', $registration_data);
-  
+       
         $QR_Image = $google2fa->getQRCodeInline(
             config('app.name'),
             $registration_data['email'],
+          
             $registration_data['google2fa_secret']
         );
           
@@ -105,5 +108,11 @@ class RegisterController extends Controller
         $request->merge(session('registration_data'));
   
         return $this->registration($request);
-    }   
+    } 
+    public function showRegistrationForm()
+{
+    $mohs = mohs::all();
+    return view('auth.register', compact('mohs'));
+  
+}
 }

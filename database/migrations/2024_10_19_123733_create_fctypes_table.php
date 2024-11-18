@@ -13,11 +13,11 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('mohs', function (Blueprint $table) {
-            $table->integer('mohcode');
-            $table->string('mohname');
-            $table->softDeletes();
+        Schema::create('Fctypes', function (Blueprint $table) {
             $table->id();
+            $table->string('Fname', 999);
+            $table->unsignedBigInteger('moh_id');
+            $table->foreign('moh_id')->references('id')->on('mohs')->onDelete('cascade');
             $table->timestamps();
             $table->string('Created_by');
         });
@@ -30,6 +30,7 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('mohs');
+        Schema::dropIfExists('fctypes');
     }
 };
+ؤ رضشصء1س3ثيءؤ 
