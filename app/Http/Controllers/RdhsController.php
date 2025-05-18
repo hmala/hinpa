@@ -118,8 +118,15 @@ class RdhsController extends Controller
      * @param  \App\Models\rdhs  $rdhs
      * @return \Illuminate\Http\Response
      */
-    public function destroy(rdhs $rdhs)
+    public function destroy(Request $request)
     {
-        //
+        $rdhs = rdhs::findOrFail($request->id);
+         $rdhs->delete();
+         session()->flash('delete', 'تم حذف المنتج بنجاح');
+         return redirect('/rdhs');
+    }
+    public function getHallsByRdh($rdhId) {
+        $halls = Hall::where('rdh_id', $rdhId)->get();
+        return response()->json($halls);
     }
 }

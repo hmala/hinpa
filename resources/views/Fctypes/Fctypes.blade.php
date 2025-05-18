@@ -79,7 +79,6 @@
 										<thead>
 											<tr>
 												<th class="border-bottom-0">#</th>
-												<th class="border-bottom-0">الرمز</th>
 												<th class="border-bottom-0">نوع المؤسسة</th>
 											</tr>
 										</thead>
@@ -91,11 +90,10 @@
 										<tr>
                                         <td>{{ $i }}</td>
                                         <td>{{ $x->Fname}}</td>
-                                        <td>{{ $x->moh->mohname}}</td>
                                         <td>
                                         <button class="btn btn-outline-success btn-sm"
                                                 data-name="{{ $x->Fname }}" data-pro_id="{{ $x->id }}"
-                                                data-section_name="{{ $x->moh->mohname }}"
+                                            
                                               data-toggle="modal"
                                                 data-target="#edit_Product">تعديل</button>
 
@@ -134,13 +132,7 @@
                                 <input type="text" class="form-control" id="Product_name" name="Product_name" required>
                             </div>
 
-                            <label class="my-1 mr-2" for="inlineFormCustomSelectPref">القسم</label>
-                            <select name="sname" id="sname" class="form-control" required>
-                                <option value="" selected disabled> --حدد القسم--</option>
-                                @foreach ($mohs as $mohs)
-                                    <option value="{{ $mohs->id}}">{{ $mohs->mohname }}</option>
-                                @endforeach
-                            </select>
+                          
 
                             
                         </div>
@@ -152,10 +144,7 @@
                 </div>
             </div>
         </div>
-@php
-    use App\Models\Mohs;
-    $mohs = $mohs::all(); // استرداد جميع السجلات من جدول Moh كمجموعة
-@endphp
+
 
 <div class="modal fade" id="edit_Product" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">

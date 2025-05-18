@@ -5,7 +5,11 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Providers\RouteServiceProvider;
 use App\Models\User;
-use App\Models\mohs; // هنا استيراد النموذج
+use App\Models\mohs; 
+use App\Models\fck; 
+use App\Models\fctypes; // هنا استيراد النموذج
+// هنا استيراد النموذج
+// هنا استيراد النموذج
 use Illuminate\Foundation\Auth\RegistersUsers;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -56,8 +60,19 @@ class RegisterController extends Controller
         return Validator::make($data, [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
-            'password' => ['required', 'string', 'min:6', 'confirmed'],
-           'section_id' => ['required', 'integer']
+            'password' => [
+                'required',
+                'string',
+                'min:8', // الحد الأدنى 8 أحرف
+                'regex:/[a-z]/', // حروف صغيرة
+                'regex:/[A-Z]/', // حروف كبيرة
+                'regex:/[0-9]/', // أرقام
+                'regex:/[@$!%*?&]/', // رموز خاصة
+                'confirmed', // تأكيد كلمة المرور
+            ],  
+           'section_id' => ['required', 'integer'],
+           'fckt' => ['required', 'integer'],
+           'fckn' => ['required', 'integer'],
            
         ]);
     }
@@ -75,6 +90,8 @@ class RegisterController extends Controller
             'password' => Hash::make($data['password']),
             'google2fa_secret' => $data['google2fa_secret'],
             'mohcode'=>$data['section_id'],
+            'fcktid'=>$data['fckt'],
+            'fckid'=>$data['fckn'],
         ]);
     }
     public function register(Request $request)
@@ -109,10 +126,39 @@ class RegisterController extends Controller
   
         return $this->registration($request);
     } 
+    
     public function showRegistrationForm()
-{
-    $mohs = mohs::all();
-    return view('auth.register', compact('mohs'));
-  
-}
+    {  
+        $mohs = mohs::all();
+        $fctypes = fctypes::all();
+        $fckns = collect(); // افتراضيًا نقوم بإرسال قائمة فارغة
+
+        return view('auth.register', compact('mohs', 'fctypes', 'fckns'));
+    }
+
+    public function getInstitutions(Request $request)
+    {
+        try {
+            // التحقق من وجود section_id و fckt
+            $section_id = $request->input('section_id');
+            $fckt = $request->input('fckt');
+
+            if (!$section_id || !$fckt) {
+                return response()->json([], 400); // Bad Request إذا كانت البيانات غير مكتملة
+            }
+
+            // جلب المؤسسات بناءً على section_id و fckt
+            $institutions = fck::where('moh_id', $section_id)
+                ->where('fctypesid', $fckt)
+                ->get();
+
+            return response()->json($institutions);
+        } catch (\Exception $e) {
+            // تسجيل الخطأ في السجلات
+            \Log::error('Error fetching institutions: ' . $e->getMessage());
+            return response()->json(['error' => 'Internal Server Error'], 500);
+        }
+    }
+    
+    
 }

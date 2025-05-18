@@ -41,7 +41,6 @@ class FctypesController extends Controller
     {
         Fctypes::create([
             'Fname'     => $request->Product_name,
-            'moh_id'    => $request->sname,
             'Created_by'=>(Auth::user()->email),
         ]);
         session()->flash('Add', 'تم اضافة المنتج بنجاح ');
@@ -86,7 +85,6 @@ class FctypesController extends Controller
 
        $Fctypes->update([
        'fname' => $request->Product_name,
-        'moh_id' => $id,
        ]);
 
        session()->flash('Edit', 'تم تعديل المنتج بنجاح');

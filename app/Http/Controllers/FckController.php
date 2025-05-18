@@ -3,6 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\fck;
+use App\Models\mohs;
+use App\Models\Fctypes;
+use Illuminate\Support\Facades\Auth;
+
 use Illuminate\Http\Request;
 
 class FckController extends Controller
@@ -14,8 +18,12 @@ class FckController extends Controller
      */
     public function index()
     {
-       
-        return view('fcks.Fcks');
+
+        $mohs=mohs::all(); 
+       $Fctypes=Fctypes::all();
+       $fck=fck::all();
+
+        return view('fcks.Fcks',compact('fck','mohs','Fctypes'));
     }
 
     /**
@@ -36,7 +44,15 @@ class FckController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        fck::create([
+            'Fckname'=> $request->Product_name,
+            'moh_id'=> $request->Section,
+            'fctypesid'=> $request->product,
+
+            'Created_by'=>(Auth::user()->email),
+        ]);
+        session()->flash('Add', 'تم اضافة المنتج بنجاح ');
+        return redirect('/Fcks');
     }
 
     /**
@@ -70,7 +86,19 @@ class FckController extends Controller
      */
     public function update(Request $request, fck $fck)
     {
-        //
+       
+    
+            $id = mohs::where('mohname', $request->section_name)->first()->id;
+    
+           $Fctypes = Fctypes::findOrFail($request->pro_id);
+    
+           $Fctypes->update([
+           'fname' => $request->Product_name,
+           ]);
+    
+           session()->flash('Edit', 'تم تعديل المنتج بنجاح');
+           return back();
+        
     }
 
     /**
