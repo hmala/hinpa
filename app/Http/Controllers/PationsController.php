@@ -361,15 +361,62 @@ public function status_update($id, Request $request)
 }
 public function print_pations(Request $request)
 {
-    $fck=fck::all();
+    $fck = fck::all();
     $surg = surg::all(); 
-    $rdhs=rdhs::all(); 
-    $mohs=mohs::all(); 
+    $rdhs = rdhs::all(); 
+    $mohs = mohs::all(); 
 
-    $surgery=surgery::where('fck_id', Auth::user()->fckid)
-    ->where('month', request('month'))
-    ->where('year', $request->input('year'))
-    ->get();
+    $query = surgery::query();
+    $pationsQuery = pations::query();
+    $salatQuery = salat::query();
+    $hwadthQuery = hwadth::query();
+
+    // فلترة حسب الشهر والسنة
+    if($request->filled('month')) {
+        $query->where('month', $request->month);
+        $pationsQuery->where('month', $request->month);
+        $salatQuery->where('month', $request->month);
+        $hwadthQuery->where('month', $request->month);
+    }
+    if($request->filled('year')) {
+        $query->where('year', $request->year);
+        $pationsQuery->where('year', $request->year);
+        $salatQuery->where('year', $request->year);
+        $hwadthQuery->where('year', $request->year);
+    }
+
+    // فلترة حسب المؤسسة
+    if($request->filled('fck_id')) {
+        $query->where('fck_id', $request->fck_id);
+        $pationsQuery->where('fck_id', $request->fck_id);
+        $salatQuery->where('fck_id', $request->fck_id);
+        $hwadthQuery->where('fck_id', $request->fck_id);
+    }
+    // فلترة حسب دائرة الصحة
+    elseif($request->filled('moh_id')) {
+        $fcks = fck::where('moh_id', $request->moh_id)->pluck('id');
+        $query->whereIn('fck_id', $fcks);
+        $pationsQuery->whereIn('fck_id', $fcks);
+        $salatQuery->whereIn('fck_id', $fcks);
+        $hwadthQuery->whereIn('fck_id', $fcks);
+    }
+    // إذا كان المستخدم ليس admin، نقيد البحث حسب صلاحياته
+    elseif (!in_array("Admin", Auth::user()->roles_name)) {
+        if(in_array("stat-doh", Auth::user()->roles_name)) {
+            $fcks = fck::where('moh_id', Auth::user()->mohcode)->pluck('id');
+            $query->whereIn('fck_id', $fcks);
+            $pationsQuery->whereIn('fck_id', $fcks);
+            $salatQuery->whereIn('fck_id', $fcks);
+            $hwadthQuery->whereIn('fck_id', $fcks);
+        } else {
+            $query->where('fck_id', Auth::user()->fckid);
+            $pationsQuery->where('fck_id', Auth::user()->fckid);
+            $salatQuery->where('fck_id', Auth::user()->fckid);
+            $hwadthQuery->where('fck_id', Auth::user()->fckid);
+        }
+    }
+
+    $surgery = $query->get();
     $salat=salat::where('fck_id', Auth::user()->fckid)
     ->where('month', request('month'))
     ->where('year', $request->input('year'))
@@ -387,5 +434,125 @@ public function print_pations(Request $request)
 public function getHallsByRdh($rdhId) {
     $halls = rdhs::where('rdh_id', $rdhId)->get();
     return response()->json($halls);
+}
+
+public function summary_report(Request $request)
+{
+    $fck = fck::all();
+    $surg = surg::all(); 
+    $rdhs = rdhs::all(); 
+    $mohs = mohs::all(); 
+    $fctypes = \App\Models\Fctypes::all();
+
+    $query = surgery::query();
+    $pationsQuery = pations::query();
+    $salatQuery = salat::query();
+    $hwadthQuery = hwadth::query();
+
+    // فلترة حسب الفترة الزمنية
+    if($request->filled('from_month') && $request->filled('from_year') && 
+       $request->filled('to_month') && $request->filled('to_year')) {
+        $fromDate = $request->from_year . '-' . str_pad($request->from_month, 2, '0', STR_PAD_LEFT);
+        $toDate = $request->to_year . '-' . str_pad($request->to_month, 2, '0', STR_PAD_LEFT);
+
+        $query->whereRaw("CONCAT(year, '-', LPAD(month, 2, '0')) BETWEEN ? AND ?", [$fromDate, $toDate]);
+        $pationsQuery->whereRaw("CONCAT(year, '-', LPAD(month, 2, '0')) BETWEEN ? AND ?", [$fromDate, $toDate]);
+        $salatQuery->whereRaw("CONCAT(year, '-', LPAD(month, 2, '0')) BETWEEN ? AND ?", [$fromDate, $toDate]);
+        $hwadthQuery->whereRaw("CONCAT(year, '-', LPAD(month, 2, '0')) BETWEEN ? AND ?", [$fromDate, $toDate]);
+    }
+
+    // فلترة حسب نوع المؤسسة
+    if($request->filled('institution_type')) {
+        $fcks = fck::where('institution_id', $request->institution_type)->pluck('id');
+        $query->whereIn('fck_id', $fcks);
+        $pationsQuery->whereIn('fck_id', $fcks);
+        $salatQuery->whereIn('fck_id', $fcks);
+        $hwadthQuery->whereIn('fck_id', $fcks);
+    }
+
+    // فلترة حسب المؤسسة
+    if($request->filled('fck_id')) {
+        $query->where('fck_id', $request->fck_id);
+        $pationsQuery->where('fck_id', $request->fck_id);
+        $salatQuery->where('fck_id', $request->fck_id);
+        $hwadthQuery->where('fck_id', $request->fck_id);
+    }
+    // فلترة حسب دائرة الصحة
+    elseif($request->filled('moh_id')) {
+        $fcks = fck::where('moh_id', $request->moh_id)->pluck('id');
+        $query->whereIn('fck_id', $fcks);
+        $pationsQuery->whereIn('fck_id', $fcks);
+        $salatQuery->whereIn('fck_id', $fcks);
+        $hwadthQuery->whereIn('fck_id', $fcks);
+    }
+    // إذا كان المستخدم ليس admin، نقيد البحث حسب صلاحياته
+    elseif (!in_array("Admin", Auth::user()->roles_name)) {
+        if(in_array("stat-doh", Auth::user()->roles_name)) {
+            $fcks = fck::where('moh_id', Auth::user()->mohcode)->pluck('id');
+            $query->whereIn('fck_id', $fcks);
+            $pationsQuery->whereIn('fck_id', $fcks);
+            $salatQuery->whereIn('fck_id', $fcks);
+            $hwadthQuery->whereIn('fck_id', $fcks);
+        } else {
+            $query->where('fck_id', Auth::user()->fckid);
+            $pationsQuery->where('fck_id', Auth::user()->fckid);
+            $salatQuery->where('fck_id', Auth::user()->fckid);
+            $hwadthQuery->where('fck_id', Auth::user()->fckid);
+        }
+    }
+
+    $surgery = $query
+        ->selectRaw('
+            fck_id,
+            SUM(khasa) as total_khasa,
+            SUM(fkubra) as total_fkubra,
+            SUM(kubra) as total_kubra,
+            SUM(mtws) as total_mtws,
+            SUM(sugra) as total_sugra
+        ')
+        ->groupBy('fck_id')
+        ->get();
+
+    $pations = $pationsQuery
+        ->selectRaw('
+            fck_id,
+            spebed,
+            SUM(unitnum) as total_unitnum,
+            SUM(bedm) as total_bedm,
+            SUM(outpationmon) as total_outpationmon,
+            SUM(stayoutpation) as total_stayoutpation,
+            SUM(mkoth) as total_mkoth,
+            SUM(death) as total_death
+        ')
+        ->groupBy('fck_id', 'spebed')
+        ->get();
+
+    $salat = $salatQuery
+        ->selectRaw('
+            fck_id,
+            SUM(salnum) as total_salnum,
+            SUM(bsalnum) as total_bsalnum
+        ')
+        ->groupBy('fck_id')
+        ->get();
+
+    $hwadth = $hwadthQuery
+        ->selectRaw('
+            fck_id,
+            SUM(livebnt) as total_livebnt,
+            SUM(livebst) as total_livebst,
+            SUM(totalbt) as total_totalbt,
+            SUM(bdeadnt) as total_bdeadnt,
+            SUM(bdeadst) as total_bdeadst,
+            SUM(deadlt) as total_deadlt,
+            SUM(deadmt) as total_deadmt,
+            SUM(totaldt) as total_totaldt,
+            SUM(mdeadt) as total_mdeadt,
+            SUM(deadtb) as total_deadtb
+        ')
+        ->groupBy('fck_id')
+        ->get();
+
+    return view('summary_report', compact('rdhs', 'pations', 'mohs', 'surg', 'fck', 'surgery', 'salat', 'hwadth', 'fctypes'));
 }
 }
