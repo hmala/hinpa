@@ -4,7 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Service;
 use App\Models\TypeSpecialization;
+use App\Models\Service_Specialization;
+use App\Imports\ServiceSpecializationImport;
 use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ServiceSpecializationController extends Controller
 {
@@ -12,7 +15,7 @@ class ServiceSpecializationController extends Controller
     {
         $this->middleware('auth');
         $this->middleware('permission:ربط الخدمات بالتخصصات.عرض')->only(['index']);
-        $this->middleware('permission:ربط الخدمات بالتخصصات.اضافة')->only(['create', 'store']);
+        $this->middleware('permission:ربط الخدمات بالتخصصات.اضافة')->only(['create', 'store', 'import', 'showImportForm']);
         $this->middleware('permission:ربط الخدمات بالتخصصات.تعديل')->only(['edit', 'update']);
         $this->middleware('permission:ربط الخدمات بالتخصصات.حذف')->only('destroy');
     }
@@ -35,7 +38,6 @@ class ServiceSpecializationController extends Controller
         $validated = $request->validate([
             'service_id' => 'required|exists:services,id',
             'type_specialization_id' => 'required|exists:type_specializations,id',
-           
             'codesv' => 'required|string',
             'namesv' => 'required|string',
             'price' => 'required|numeric',
@@ -44,7 +46,6 @@ class ServiceSpecializationController extends Controller
 
         $service = Service::findOrFail($request->service_id);
         $service->typeSpecializations()->attach($request->type_specialization_id, [
-           
             'codesv' => $request->codesv,
             'namesv' => $request->namesv,
             'price' => $request->price,
@@ -53,6 +54,18 @@ class ServiceSpecializationController extends Controller
 
         return redirect()->route('service-specializations.index')
             ->with('success', 'تم ربط الخدمة بالتخصص بنجاح');
+    }    public function import(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|mimes:xlsx,xls,csv,txt'
+        ]);
+
+        try {
+            Excel::import(new ServiceSpecializationImport, $request->file('file'));
+            return redirect()->back()->with('success', 'تم استيراد البيانات بنجاح');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'حدث خطأ أثناء استيراد البيانات: ' . $e->getMessage());
+        }
     }
 
     public function edit(Service $service, TypeSpecialization $specialization)
@@ -77,7 +90,6 @@ class ServiceSpecializationController extends Controller
     public function update(Request $request, Service $service, TypeSpecialization $specialization)
     {
         $validated = $request->validate([
-           
             'codesv' => 'required|string',
             'namesv' => 'required|string',
             'price' => 'required|numeric',
@@ -85,7 +97,6 @@ class ServiceSpecializationController extends Controller
         ]);
 
         $service->typeSpecializations()->updateExistingPivot($specialization->id, [
-           
             'codesv' => $request->codesv,
             'namesv' => $request->namesv,
             'price' => $request->price,
@@ -101,5 +112,10 @@ class ServiceSpecializationController extends Controller
         $service->typeSpecializations()->detach($specialization->id);
         return redirect()->route('service-specializations.index')
             ->with('success', 'تم حذف ربط الخدمة بالتخصص بنجاح');
+    }
+
+    public function showImportForm()
+    {
+        return view('service-specializations.import');
     }
 }

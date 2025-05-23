@@ -12,6 +12,14 @@
 <link href="{{ URL::asset('assets/plugins/select2/css/select2.min.css') }}" rel="stylesheet">
 <!--Internal   Notify -->
 <link href="{{ URL::asset('assets/plugins/notify/css/notifIt.css') }}" rel="stylesheet" />
+<!-- Internal Select2 css -->
+<link href="{{ URL::asset('assets/plugins/select2/css/select2.min.css') }}" rel="stylesheet">
+@section('script')
+<!-- Internal Select2 js-->
+<script src="{{ URL::asset('assets/plugins/select2/js/select2.min.js') }}"></script>
+<!-- Internal form-elements js -->
+<script src="{{ URL::asset('assets/js/form-elements.js') }}"></script>
+@endsection
 @endsection
 @section('content')
 <div class="container-fluid">
@@ -81,69 +89,101 @@
                                     </div>
                                 </div>
                             </div>
-                        </div>
-
-                        <!-- الرسوم والأجور -->
-                        <div class="card mb-4">                            <div class="card-header bg-gradient-green text-center">
+                        </div>                        <!-- الرسوم والأجور -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-gradient-green text-center">
                                 <h4 class="mb-0"><i class="fas fa-money-bill-wave"></i> الرسوم والأجور</h4>
                             </div>
                             <div class="card-body">
+                                <div class="row mb-4">
+                                    <div class="col-12">
+                                        <div class="card shadow-sm">
+                                            <div class="card-header bg-light">
+                                                <h5 class="mb-0">الخدمات المقدمة</h5>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="row mb-3">
+                                                    <div class="col-md-8">                                                        <div class="row">
+                                                            <div class="col-md-4 mb-3">                                                                <select id="service_select" class="form-control select2">
+                                                                    <option value="">اختر الخدمة...</option>
+                                                                    @foreach($services as $service)
+                                                                        <option value="{{ $service->id }}">{{ $service->sername }}</option>
+                                                                    @endforeach
+                                                                </select>
+                                                            </div>
+                                                            <div class="col-md-4 mb-3">
+                                                                <select id="specialization_select" class="form-control select2">
+                                                                    <option value="">اختر التخصص...</option>
+                                                                </select>
+                                                            </div>
+                                                            <div class="col-md-4 mb-3">
+                                                                <select id="service_specialization_select" class="form-control select2">
+                                                                    <option value="">اختر الخدمة المتخصصة...</option>
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <button type="button" class="btn btn-primary" id="add_service">
+                                                            <i class="fas fa-plus-circle"></i> إضافة خدمة
+                                                        </button>
+                                                    </div>
+                                                </div>
+
+                                                <div class="table-responsive">
+                                                    <table class="table table-bordered" id="services_table">
+                                                        <thead class="bg-light">
+                                                            <tr>
+                                                                <th>رمز الخدمة</th>
+                                                                <th>اسم الخدمة</th>
+                                                                <th width="150">السعر (د.ع)</th>
+                                                                <th width="100">حذف</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                        </tbody>
+                                                        <tfoot>
+                                                            <tr>
+                                                                <th colspan="2" class="text-left">المجموع الكلي</th>
+                                                                <th colspan="2" id="total_amount">0.00 د.ع</th>
+                                                            </tr>
+                                                        </tfoot>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- أجور الأسرّة والإقامة -->
                                 <div class="row">
                                     <div class="col-md-4 mb-3">
                                         <label for="patient_bed_fee" class="form-label fw-bold">أجور رقود المريض</label>
                                         <div class="input-group">
                                             <span class="input-group-text">د.ع</span>
-                                            <input type="number" step="0.01" class="form-control shadow-sm" id="patient_bed_fee" name="patient_bed_fee" required>
+                                            <input type="number" step="0.01" class="form-control shadow-sm fee-input" id="patient_bed_fee" name="patient_bed_fee" required>
                                         </div>
                                     </div>
                                     <div class="col-md-4 mb-3">
                                         <label for="companion_bed_fee" class="form-label fw-bold">أجور رقود المرافق</label>
                                         <div class="input-group">
                                             <span class="input-group-text">د.ع</span>
-                                            <input type="number" step="0.01" class="form-control shadow-sm" id="companion_bed_fee" name="companion_bed_fee">
+                                            <input type="number" step="0.01" class="form-control shadow-sm fee-input" id="companion_bed_fee" name="companion_bed_fee">
                                         </div>
                                     </div>
                                     <div class="col-md-4 mb-3">
                                         <label for="nutrition_fee" class="form-label fw-bold">أجور التغذية</label>
                                         <div class="input-group">
                                             <span class="input-group-text">د.ع</span>
-                                            <input type="number" step="0.01" class="form-control shadow-sm" id="nutrition_fee" name="nutrition_fee">
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="row">
-                                    <div class="col-md-3 mb-3">
-                                        <label for="medicine_supplies_fee" class="form-label fw-bold">أجور الأدوية والمستلزمات</label>
-                                        <div class="input-group">
-                                            <span class="input-group-text">د.ع</span>
-                                            <input type="number" step="0.01" class="form-control shadow-sm" id="medicine_supplies_fee" name="medicine_supplies_fee">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3 mb-3">
-                                        <label for="laboratory_tests_fee" class="form-label fw-bold">أجور الفحوص المختبرية</label>
-                                        <div class="input-group">
-                                            <span class="input-group-text">د.ع</span>
-                                            <input type="number" step="0.01" class="form-control shadow-sm" id="laboratory_tests_fee" name="laboratory_tests_fee">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3 mb-3">
-                                        <label for="xray_fees" class="form-label fw-bold">أجور الفحوصات الشعاعية</label>
-                                        <div class="input-group">
-                                            <span class="input-group-text">د.ع</span>
-                                            <input type="number" step="0.01" class="form-control shadow-sm" id="xray_fees" name="xray_fees">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3 mb-3">
-                                        <label for="sonar_fees" class="form-label fw-bold">أجور فحوصات السونار</label>
-                                        <div class="input-group">
-                                            <span class="input-group-text">د.ع</span>
-                                            <input type="number" step="0.01" class="form-control shadow-sm" id="sonar_fees" name="sonar_fees">
+                                            <input type="number" step="0.01" class="form-control shadow-sm fee-input" id="nutrition_fee" name="nutrition_fee">
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Input hidden للخدمات -->
+                        <input type="hidden" name="services" id="services_input" value="[]">
 
                         <!-- معلومات التأمينات -->
                         <div class="card mb-4">                            <div class="card-header bg-gradient-orange text-center">
@@ -249,6 +289,18 @@
     h4.mb-0 {
         font-weight: 600;
     }
+    .select2-container--default .select2-selection--single {
+        height: calc(1.5em + 0.75rem + 2px);
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+        line-height: calc(1.5em + 0.75rem);
+        padding-right: 0.75rem;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: calc(1.5em + 0.75rem);
+    }
 </style>
 @endpush
 
@@ -270,6 +322,183 @@
             });
         }, false);
     })();
+</script>
+<script>
+$(document).ready(function() {
+    // Initialize Select2
+    $('.select2').select2({
+        placeholder: function() {
+            return $(this).data('placeholder');
+        },
+        width: '100%',
+        dir: 'rtl'
+    });    // Service selection change event
+    $('#service_select').on('change', function() {
+        var serviceId = $(this).val();
+        var specializationSelect = $('#specialization_select');
+        var serviceSpecializationSelect = $('#service_specialization_select');
+        
+        // Reset dependent dropdowns
+        specializationSelect.empty().append('<option value="">اختر التخصص...</option>');
+        serviceSpecializationSelect.empty().append('<option value="">اختر الخدمة المتخصصة...</option>');
+        
+        if (serviceId) {
+            specializationSelect.prop('disabled', false);
+            specializationSelect.html('<option value="">جاري التحميل...</option>');
+            // Fetch specializations
+            $.ajax({
+                url: '/get-specializations/' + serviceId,
+                type: 'GET',
+                success: function(data) {                    console.log('Received specializations:', data);
+                    specializationSelect.empty().append('<option value="">اختر التخصص...</option>');
+                    
+                    if (data && data.length > 0) {
+                        data.forEach(function(specialization) {
+                            specializationSelect.append(
+                                $('<option></option>')
+                                    .val(specialization.id)
+                                    .text(specialization.tsname)
+                            );
+                        });
+                        specializationSelect.prop('disabled', false);
+                    } else {
+                        specializationSelect.append('<option value="">لا توجد تخصصات متاحة</option>');
+                        console.log('No specializations found for service:', serviceId);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error fetching specializations:', error);
+                    console.error('Status:', status);
+                    console.error('Response:', xhr.responseText);
+                    alert('حدث خطأ أثناء جلب التخصصات. الرجاء المحاولة مرة أخرى.');
+                }
+            });
+        }
+    });    // Specialization selection change event
+    $('#specialization_select').on('change', function() {
+        var serviceId = $('#service_select').val();
+        var specializationId = $(this).val();
+        var serviceSpecializationSelect = $('#service_specialization_select');
+        
+        // Reset service specialization dropdown
+        serviceSpecializationSelect.empty().append('<option value="">اختر الخدمة المتخصصة...</option>').prop('disabled', false);
+        
+        if (serviceId && specializationId) {
+            // Fetch service specializations            $.ajax({
+                url: '/get-service-specializations/' + serviceId + '/' + specializationId,
+                type: 'GET',
+                success: function(data) {                    console.log('Received service specializations:', data);
+                    serviceSpecializationSelect.empty().append('<option value="">اختر الخدمة المتخصصة...</option>');
+                    
+                    if (data && data.length > 0) {
+                        data.forEach(function(specialization) {
+                            var optionText = specialization.namesv + ' (' + specialization.codesv + ')';
+                            var $option = $('<option></option>')
+                                .val(specialization.id)
+                                .text(optionText)
+                                .data({
+                                    'price': specialization.price,
+                                    'code': specialization.codesv
+                                });
+                            serviceSpecializationSelect.append($option);
+                        });
+                        serviceSpecializationSelect.prop('disabled', false);
+                    } else {
+                        serviceSpecializationSelect.append('<option value="">لا توجد خدمات متخصصة متاحة</option>');
+                        console.log('No service specializations found for service:', serviceId, 'and specialization:', specializationId);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error fetching service specializations:', error);
+                    console.error('Status:', status);
+                    console.error('Response:', xhr.responseText);
+                    alert('حدث خطأ أثناء جلب الخدمات المتخصصة. الرجاء المحاولة مرة أخرى.');
+                }
+            });
+        }
+    });
+
+    // Add service button click event
+    $('#add_service').on('click', function(e) {
+        e.preventDefault();
+        
+        var serviceId = $('#service_select').val();
+        var specializationId = $('#specialization_select').val();
+        var serviceSpecializationId = $('#service_specialization_select').val();
+        var serviceSpecializationOption = $('#service_specialization_select option:selected');
+        
+        if (!serviceId || !specializationId || !serviceSpecializationId) {
+            alert('الرجاء اختيار جميع الخدمات المطلوبة');
+            return;
+        }
+
+        var combinedId = serviceId + '_' + specializationId + '_' + serviceSpecializationId;
+        var serviceName = serviceSpecializationOption.text();
+        var servicePrice = serviceSpecializationOption.data('price') || 0;
+
+        // Check if service already exists
+        if ($('#services_table tbody').find('tr[data-id="' + combinedId + '"]').length === 0) {
+            // Add row to table
+            var newRow = `
+                <tr data-id="${combinedId}">
+                    <td>${serviceSpecializationOption.data('code') || '-'}</td>
+                    <td>${serviceName}</td>
+                    <td>
+                        <input type="number" step="0.01" class="form-control service-price" value="${servicePrice}">
+                    </td>
+                    <td>
+                        <button type="button" class="btn btn-danger btn-sm delete-service">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+            $('#services_table tbody').append(newRow);
+            updateTotalAmount();
+            updateServicesInput();
+
+            // Reset selections
+            $('#service_select, #specialization_select, #service_specialization_select').val('').trigger('change');
+            $('#specialization_select, #service_specialization_select').prop('disabled', true);
+        } else {
+            alert('هذه الخدمة مضافة مسبقاً');
+        }
+    });
+
+    // Delete service click event
+    $(document).on('click', '.delete-service', function() {
+        $(this).closest('tr').remove();
+        updateTotalAmount();
+        updateServicesInput();
+    });
+
+    // Service price change event
+    $(document).on('change', '.service-price', function() {
+        updateTotalAmount();
+        updateServicesInput();
+    });
+
+    // Update total amount
+    function updateTotalAmount() {
+        var total = 0;
+        $('.service-price').each(function() {
+            total += parseFloat($(this).val()) || 0;
+        });
+        $('#total_amount').text(total.toFixed(2) + ' د.ع');
+    }
+
+    // Update hidden services input
+    function updateServicesInput() {
+        var services = [];
+        $('#services_table tbody tr').each(function() {
+            services.push({
+                id: $(this).data('id'),
+                price: $(this).find('.service-price').val()
+            });
+        });
+        $('#services_input').val(JSON.stringify(services));
+    }
+});
 </script>
 @endpush
 

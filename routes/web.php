@@ -72,6 +72,7 @@ Route::get('/edit_salat/{id}', 'App\Http\Controllers\SalatController@edit');
 Route::put('salat/update', [SalatController::class, 'update'])->name('salat.update');
 Route::resource('surgs', 'App\Http\Controllers\SalatController');
 Route::get('/report', 'App\Http\Controllers\PationsController@print_pations');
+Route::get('/summary-report', 'App\Http\Controllers\SummaryReportController@index')->name('summary-report');
 Route::resource('hwadths', HwadthController::class);
 use App\Http\Controllers\CaseController;
 
@@ -103,6 +104,8 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('service-specializations/{service}/{specialization}/edit', [ServiceSpecializationController::class, 'edit'])->name('service-specializations.edit');
     Route::put('service-specializations/{service}/{specialization}', [ServiceSpecializationController::class, 'update'])->name('service-specializations.update');
     Route::delete('service-specializations/{service}/{specialization}', [ServiceSpecializationController::class, 'destroy'])->name('service-specializations.destroy');
+    Route::get('service-specializations/import', [ServiceSpecializationController::class, 'showImportForm'])->name('service-specializations.import.form');
+    Route::post('service-specializations/import', [ServiceSpecializationController::class, 'import'])->name('service-specializations.import');
 });
 Route::get('/getCalendarData', function () {
     $selectedYear = request('year');
@@ -144,6 +147,8 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('service-specializations/{service}/{specialization}/edit', [ServiceSpecializationController::class, 'edit'])->name('service-specializations.edit');
     Route::put('service-specializations/{service}/{specialization}', [ServiceSpecializationController::class, 'update'])->name('service-specializations.update');
     Route::delete('service-specializations/{service}/{specialization}', [ServiceSpecializationController::class, 'destroy'])->name('service-specializations.destroy');
+    
+    // Private Wing routes
+    Route::get('get-specializations/{serviceId}', [PrivateWingController::class, 'getSpecializations']);
+    Route::get('get-service-specializations/{serviceId}/{specializationId}', [PrivateWingController::class, 'getServiceSpecializations']);
 });
-// مسار تصدير البيانات
-Route::get('/export-pations', [PationController::class, 'export'])->name('export.pations');

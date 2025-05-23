@@ -6,16 +6,50 @@ use App\Models\PrivateWing;
 use Illuminate\Http\Request;
 
 class PrivateWingController extends Controller
-{
+{    public function getSpecializations($serviceId)
+    {
+        try {
+            // مباشرة من جدول service_specialization
+            $specializations = \App\Models\TypeSpecialization::join('service_specialization', 'type_specializations.id', '=', 'service_specialization.type_specialization_id')
+                ->where('service_specialization.service_id', $serviceId)
+                ->select('type_specializations.id', 'type_specializations.tsname')
+                ->distinct()
+                ->get();
+
+            return response()->json($specializations);
+        } catch (\Exception $e) {
+            \Log::error('Error in getSpecializations: ' . $e->getMessage());
+            return response()->json(['error' => 'حدث خطأ أثناء جلب التخصصات'], 500);
+        }
+    }    public function getServiceSpecializations($serviceId, $specializationId)
+    {
+        try {
+            $specializations = \App\Models\Service_Specialization::where('service_id', $serviceId)
+                ->where('type_specialization_id', $specializationId)
+                ->select('id', 'codesv', 'namesv', 'price')
+                ->get();
+
+            if ($specializations->isEmpty()) {
+                \Log::info('No specializations found for service_id: ' . $serviceId . ' and specialization_id: ' . $specializationId);
+            }
+            
+            return response()->json($specializations);
+        } catch (\Exception $e) {
+            \Log::error('Error in getServiceSpecializations: ' . $e->getMessage());
+            return response()->json([
+                'error' => 'حدث خطأ أثناء جلب الخدمات المتخصصة',
+                'details' => $e->getMessage()
+            ], 500);
+        }
+    }
     public function index()
     {
         $privateWings = PrivateWing::latest()->paginate(10);
         return view('private-wings.index', compact('privateWings'));
-    }
-
-    public function create()
+    }    public function create()
     {
-        return view('private-wings.create');
+        $services = \App\Models\Service::all();
+        return view('private-wings.create', compact('services'));
     }
 
     public function store(Request $request)

@@ -361,62 +361,15 @@ public function status_update($id, Request $request)
 }
 public function print_pations(Request $request)
 {
-    $fck = fck::all();
+    $fck=fck::all();
     $surg = surg::all(); 
-    $rdhs = rdhs::all(); 
-    $mohs = mohs::all(); 
+    $rdhs=rdhs::all(); 
+    $mohs=mohs::all(); 
 
-    $query = surgery::query();
-    $pationsQuery = pations::query();
-    $salatQuery = salat::query();
-    $hwadthQuery = hwadth::query();
-
-    // فلترة حسب الشهر والسنة
-    if($request->filled('month')) {
-        $query->where('month', $request->month);
-        $pationsQuery->where('month', $request->month);
-        $salatQuery->where('month', $request->month);
-        $hwadthQuery->where('month', $request->month);
-    }
-    if($request->filled('year')) {
-        $query->where('year', $request->year);
-        $pationsQuery->where('year', $request->year);
-        $salatQuery->where('year', $request->year);
-        $hwadthQuery->where('year', $request->year);
-    }
-
-    // فلترة حسب المؤسسة
-    if($request->filled('fck_id')) {
-        $query->where('fck_id', $request->fck_id);
-        $pationsQuery->where('fck_id', $request->fck_id);
-        $salatQuery->where('fck_id', $request->fck_id);
-        $hwadthQuery->where('fck_id', $request->fck_id);
-    }
-    // فلترة حسب دائرة الصحة
-    elseif($request->filled('moh_id')) {
-        $fcks = fck::where('moh_id', $request->moh_id)->pluck('id');
-        $query->whereIn('fck_id', $fcks);
-        $pationsQuery->whereIn('fck_id', $fcks);
-        $salatQuery->whereIn('fck_id', $fcks);
-        $hwadthQuery->whereIn('fck_id', $fcks);
-    }
-    // إذا كان المستخدم ليس admin، نقيد البحث حسب صلاحياته
-    elseif (!in_array("Admin", Auth::user()->roles_name)) {
-        if(in_array("stat-doh", Auth::user()->roles_name)) {
-            $fcks = fck::where('moh_id', Auth::user()->mohcode)->pluck('id');
-            $query->whereIn('fck_id', $fcks);
-            $pationsQuery->whereIn('fck_id', $fcks);
-            $salatQuery->whereIn('fck_id', $fcks);
-            $hwadthQuery->whereIn('fck_id', $fcks);
-        } else {
-            $query->where('fck_id', Auth::user()->fckid);
-            $pationsQuery->where('fck_id', Auth::user()->fckid);
-            $salatQuery->where('fck_id', Auth::user()->fckid);
-            $hwadthQuery->where('fck_id', Auth::user()->fckid);
-        }
-    }
-
-    $surgery = $query->get();
+    $surgery=surgery::where('fck_id', Auth::user()->fckid)
+    ->where('month', request('month'))
+    ->where('year', $request->input('year'))
+    ->get();
     $salat=salat::where('fck_id', Auth::user()->fckid)
     ->where('month', request('month'))
     ->where('year', $request->input('year'))
@@ -431,6 +384,7 @@ public function print_pations(Request $request)
     ->get();
     return view('report',compact('rdhs','pations','mohs','surg','fck','surgery','salat','hwadth'));
 }
+
 public function getHallsByRdh($rdhId) {
     $halls = rdhs::where('rdh_id', $rdhId)->get();
     return response()->json($halls);

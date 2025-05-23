@@ -15,8 +15,10 @@ class TypeSpecialization extends Model
     ];    /**
      * العلاقة مع الخدمات
      */
-   public function Service_Specialization()
+    public function services()
     {
-    return $this->belongsTo('App\Models\Service_Specialization');
+        return $this->belongsToMany(Service::class, 'service_specialization')
+            ->withPivot('codesv', 'namesv', 'price', 'notes')
+            ->withTimestamps();
     }
 }
