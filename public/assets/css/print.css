@@ -1,0 +1,45 @@
+@media print {
+    .no-print {
+        display: none !important;
+    }
+    body {
+        font-size: 14px;
+        direction: rtl;
+        background: white;
+        margin: 0;
+        padding: 0;
+    }
+    header, footer, nav, .main-header, .main-sidebar, .main-footer, .side-menu {
+        display: none !important;
+    }
+    .main-content {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    .wrapper {
+        background-color: white !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    .content-wrapper {
+        margin: 0 !important;
+        padding: 0 !important;
+        min-height: auto !important;
+        background-color: white !important;
+    }
+    .container {
+        width: 100% !important;
+        max-width: none !important;
+        padding: 2cm !important;
+        margin: 0 !important;
+    }
+}
+
+@page {
+    size: A4;
+    margin: 0;
+}
+
+@page :first {
+    margin-top: 0;
+}

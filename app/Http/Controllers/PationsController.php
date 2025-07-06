@@ -20,17 +20,25 @@ use Illuminate\Http\Request;
 use PhpOffice\PhpSpreadsheet\Calculation\DateTimeExcel\Month;
 
 class PationsController extends Controller
-{
-    function __construct()
-{
-$this->middleware('permission:الاسرة', ['only' => ['index','store','create','edit','update','destroy']]);
-$this->middleware('permission:الاسرة موثقة', ['only' => ['pations_approve']]);
+{    function __construct()
+    {
+        $this->middleware('auth');
+        // التحقق من صلاحيات المستخدم
+        $this->middleware(function ($request, $next) {
+            if (Auth::check() && (empty(Auth::user()->roles_name) || Auth::user()->Status === 'غير مفعل')) {
+                return redirect()->route('home');
+            }
+            return $next($request);
+        });
+        
+        $this->middleware('permission:الاسرة', ['only' => ['index','store','create','edit','update','destroy']]);
+        $this->middleware('permission:الاسرة موثقة', ['only' => ['pations_approve']]);
 
-$this->middleware('permission:الاسرة غير الموثقة', ['only' => ['pations_nonapprove','show1']]);
-$this->middleware('permission:عدد الاسرة حسب كل مؤسسة', ['only' => ['print_pations']]);
+        $this->middleware('permission:الاسرة غير الموثقة', ['only' => ['pations_nonapprove','show1']]);
+        $this->middleware('permission:عدد الاسرة', ['only' => ['index','store','pations_approve','create','edit','update','destroy']]);
+        $this->middleware('permission:عدد الاسرة حسب كل مؤسسة', ['only' => ['print_pations']]);
 
-
-}
+    }
     /**
      * Display a listing of the resource.
      *

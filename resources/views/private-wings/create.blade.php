@@ -3,6 +3,11 @@
 ألاسرة المهيئة 
 @stop
 @section('css')
+<!-- Custom CSS -->
+<link href="{{ URL::asset('assets/css/custom/main.css') }}" rel="stylesheet" />
+<link href="{{ URL::asset('assets/css/custom/private-wings.css') }}" rel="stylesheet" />
+<link href="{{ URL::asset('assets/css/custom/print.css') }}" rel="stylesheet" />
+
 <!-- Internal Data table css -->
 <link href="{{ URL::asset('assets/plugins/datatable/css/dataTables.bootstrap4.min.css') }}" rel="stylesheet" />
 <link href="{{ URL::asset('assets/plugins/datatable/css/buttons.bootstrap4.min.css') }}" rel="stylesheet">
@@ -19,11 +24,31 @@
 <script src="{{ URL::asset('assets/plugins/select2/js/select2.min.js') }}"></script>
 <!-- Internal form-elements js -->
 <script src="{{ URL::asset('assets/js/form-elements.js') }}"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 @endsection
 @endsection
 @section('content')
 <div class="container-fluid">
     <div class="row justify-content-center">
+        <div class="col-md-12">
+           
+
+                <div class="card-body" style="background-color: #f8f9fa;">
+                    @if ($errors->any())
+                        <div class="alert alert-danger">
+                            <ul class="mb-0">
+                                @foreach ($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
+
+                    <form action="{{ route('private-wings.store') }}" method="POST" class="needs-validation" novalidate>
+                        @csrf
+                        
+                        <!-- معلومات المريض -->
+                            <div class="row justify-content-center">
         <div class="col-md-12">
             <div class="card">                <div class="card-header bg-gradient-purple text-center">
                     <h2 class="mb-0"><i class="fas fa-plus-circle"></i> إضافة حساب جناح خاص جديد</h2>
@@ -49,13 +74,12 @@
                             </div>
                             <div class="card-body">
                                 <div class="row">
-                                    <div class="col-md-4 mb-3">
-                                        <label for="hospital" class="form-label fw-bold">المستشفى</label>
-                                        <input type="text" class="form-control shadow-sm" id="hospital" name="hospital" required>
+                                    <div class="col-md-4 mb-3">                                        <label for="hospital" class="form-label fw-bold">المستشفى</label>
+                                        <input type="text" class="form-control shadow-sm" id="hospital" name="hospital" value="{{ Auth::user()->fck ? Auth::user()->fck->Fckname : '' }}" readonly>
                                     </div>
                                     <div class="col-md-4 mb-3">
                                         <label for="health_department" class="form-label fw-bold">دائرة صحة</label>
-                                        <input type="text" class="form-control shadow-sm" id="health_department" name="health_department" required>
+                                        <input type="text" class="form-control shadow-sm" id="health_department" name="health_department" value="{{ Auth::user()->mohcode ? \App\Models\mohs::find(Auth::user()->mohcode)->mohname : '' }}" readonly>
                                     </div>
                                     <div class="col-md-4 mb-3">
                                         <label for="patient_name" class="form-label fw-bold">اسم المريض</label>
@@ -89,63 +113,70 @@
                                     </div>
                                 </div>
                             </div>
-                        </div>                        <!-- الرسوم والأجور -->
+                        </div>
+
+                        <!-- الرسوم والأجور والخدمات -->
                         <div class="card mb-4">
                             <div class="card-header bg-gradient-green text-center">
-                                <h4 class="mb-0"><i class="fas fa-money-bill-wave"></i> الرسوم والأجور</h4>
+                                <h4 class="mb-0"><i class="fas fa-money-bill-wave"></i> الرسوم والخدمات</h4>
                             </div>
                             <div class="card-body">
                                 <div class="row mb-4">
                                     <div class="col-12">
                                         <div class="card shadow-sm">
                                             <div class="card-header bg-light">
-                                                <h5 class="mb-0">الخدمات المقدمة</h5>
+                                                <h5 class="mb-0">إضافة الخدمات والرسوم</h5>
                                             </div>
                                             <div class="card-body">
                                                 <div class="row mb-3">
-                                                    <div class="col-md-8">                                                        <div class="row">
-                                                            <div class="col-md-4 mb-3">                                                                <select id="service_select" class="form-control select2">
-                                                                    <option value="">اختر الخدمة...</option>
-                                                                    @foreach($services as $service)
-                                                                        <option value="{{ $service->id }}">{{ $service->sername }}</option>
+                                                    <div class="col-md-8">                                                      
+                                                        <div class="row">
+                                                            <div class="col-md-4 mb-3">                                       
+                                                                <select name="section_id" id="section_id" class="form-control select2">
+                                                                    <option value="">اختر التخصص...</option>
+                                                                    @foreach($typeSpecializations as $typeSpecialization)
+                                                                        <option value="{{ $typeSpecialization->id }}">{{ $typeSpecialization->tsname }}</option>
                                                                     @endforeach
                                                                 </select>
                                                             </div>
-                                                            <div class="col-md-4 mb-3">
-                                                                <select id="specialization_select" class="form-control select2">
-                                                                    <option value="">اختر التخصص...</option>
+                                                            <div class="col-md-4 mb-3">   
+                                                                <select id="fckn" name="fckn" class="form-control select2">
+                                                                    <option value="" disabled selected>--حدد التخصص الفرعي--</option>
                                                                 </select>
                                                             </div>
-                                                            <div class="col-md-4 mb-3">
-                                                                <select id="service_specialization_select" class="form-control select2">
-                                                                    <option value="">اختر الخدمة المتخصصة...</option>
+                                                            <div class="col-md-4 mb-3">    
+                                                                <select id="fckr" name="fckr" class="form-control select2">
+                                                                    <option value="" disabled selected>--حدد الخدمة--</option>
                                                                 </select>
                                                             </div>
                                                         </div>
                                                     </div>
                                                     <div class="col-md-4">
-                                                        <button type="button" class="btn btn-primary" id="add_service">
-                                                            <i class="fas fa-plus-circle"></i> إضافة خدمة
-                                                        </button>
+                                                        <div class="input-group">
+                                                            <span class="input-group-text">د.ع</span>
+                                                            <input type="number" step="0.01" class="form-control shadow-sm" id="service_fee" readonly>
+                                                            <button type="button" class="btn btn-primary" id="add_service">
+                                                                <i class="fas fa-plus-circle"></i> إضافة
+                                                            </button>
+                                                        </div>
                                                     </div>
                                                 </div>
-
-                                                <div class="table-responsive">
-                                                    <table class="table table-bordered" id="services_table">
-                                                        <thead class="bg-light">
-                                                            <tr>
-                                                                <th>رمز الخدمة</th>
-                                                                <th>اسم الخدمة</th>
-                                                                <th width="150">السعر (د.ع)</th>
-                                                                <th width="100">حذف</th>
+                                                
+                                                <div class="table-responsive mt-3">
+                                                    <table class="table table-bordered" id="services_table">                                                        <thead class="bg-light">                                                            <tr>
+                                                                <th>الخدمة</th>
+                                                                <th>التكلفة اليومية</th>
+                                                                <th>الإجمالي</th>
+                                                                <th>احتساب الأيام</th>
+                                                                <th>العمليات</th>
                                                             </tr>
                                                         </thead>
                                                         <tbody>
                                                         </tbody>
                                                         <tfoot>
                                                             <tr>
-                                                                <th colspan="2" class="text-left">المجموع الكلي</th>
-                                                                <th colspan="2" id="total_amount">0.00 د.ع</th>
+                                                                <th>المجموع</th>
+                                                                <th colspan="2" id="total_amount">0 د.ع</th>
                                                             </tr>
                                                         </tfoot>
                                                     </table>
@@ -154,36 +185,8 @@
                                         </div>
                                     </div>
                                 </div>
-
-                                <!-- أجور الأسرّة والإقامة -->
-                                <div class="row">
-                                    <div class="col-md-4 mb-3">
-                                        <label for="patient_bed_fee" class="form-label fw-bold">أجور رقود المريض</label>
-                                        <div class="input-group">
-                                            <span class="input-group-text">د.ع</span>
-                                            <input type="number" step="0.01" class="form-control shadow-sm fee-input" id="patient_bed_fee" name="patient_bed_fee" required>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4 mb-3">
-                                        <label for="companion_bed_fee" class="form-label fw-bold">أجور رقود المرافق</label>
-                                        <div class="input-group">
-                                            <span class="input-group-text">د.ع</span>
-                                            <input type="number" step="0.01" class="form-control shadow-sm fee-input" id="companion_bed_fee" name="companion_bed_fee">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4 mb-3">
-                                        <label for="nutrition_fee" class="form-label fw-bold">أجور التغذية</label>
-                                        <div class="input-group">
-                                            <span class="input-group-text">د.ع</span>
-                                            <input type="number" step="0.01" class="form-control shadow-sm fee-input" id="nutrition_fee" name="nutrition_fee">
-                                        </div>
-                                    </div>
-                                </div>
                             </div>
                         </div>
-
-                        <!-- Input hidden للخدمات -->
-                        <input type="hidden" name="services" id="services_input" value="[]">
 
                         <!-- معلومات التأمينات -->
                         <div class="card mb-4">                            <div class="card-header bg-gradient-orange text-center">
@@ -191,8 +194,7 @@
                             </div>
                             <div class="card-body">
                                 <div class="row">
-                                    <div class="col-md-4 mb-3">
-                                        <label for="deposit_amount" class="form-label fw-bold">مبلغ التأمينات</label>
+                                    <div class="col-md-4 mb-3">                                        <label for="deposit_amount" class="form-label fw-bold">مبلغ التأمينات</label>
                                         <div class="input-group">
                                             <span class="input-group-text">د.ع</span>
                                             <input type="number" step="0.01" class="form-control shadow-sm" id="deposit_amount" name="deposit_amount" required>
@@ -207,6 +209,22 @@
                                         <input type="date" class="form-control shadow-sm" id="receipt_date" name="receipt_date" required>
                                     </div>
                                 </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label fw-bold">إجمالي الخدمات</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">د.ع</span>
+                                            <input type="text" class="form-control shadow-sm" id="total_services" readonly>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label fw-bold">المبلغ المتبقي</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">د.ع</span>
+                                            <input type="text" class="form-control shadow-sm" id="remaining_amount" readonly>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -218,288 +236,304 @@
                                 <i class="fas fa-arrow-right"></i> رجوع
                             </a>
                         </div>
-                    </form>
-                </div>
+                    </form>                </div>
             </div>
         </div>
     </div>
+ <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+                <script>                    $(document).ready(function() {
+                        $('#section_id').change(function() {
+                            var section_id = $('#section_id').val();
+                            
+                            if (section_id) {
+                                $.ajax({
+                                    url: "{{ route('getSpecializations') }}",
+                                    type: "POST",
+                                       data: {
+                                        _token: '{{ csrf_token() }}',
+                                        section_id: section_id,
+                                        
+                                    },
+                                    success: function(data) {
+                                        $('#fckn').empty();
+                                        $('#fckn').append('<option value="" disabled selected>--حدد المؤسسة--</option>');
+                                        $.each(data, function(key, value) {
+                                            $('#fckn').append('<option value="' + value.sercode + '">' + value.sername + '</option>');
+                                        });
+                                    },
+                                    error: function() {
+                                        alert('حدث خطأ أثناء جلب البيانات.');
+                                    }
+                                });
+                            } else {
+                                $('#fckn').empty();
+                                $('#fckn').append('<option value="" disabled selected>--حدد المؤسسة--</option>');
+                            }
+                        });
+                    });
+                </script>
+ <script>   
+                  $(document).ready(function() {
+                        $('#section_id, #fckn').change(function() {
+                            var section_id = $('#section_id').val();
+                            var fckn = $('#fckn').val();
+                            $('#service_fee').val('');
+
+                            if (section_id && fckn) {
+                                $.ajax({
+                                    url: "{{ route('getInstitutions') }}",
+                                    type: "POST",
+                                    data: {
+                                        _token: '{{ csrf_token() }}',
+                                        section_id: section_id,
+                                        fckn: fckn
+                                    },
+                                    success: function(data) {
+                                        $('#fckr').empty();
+                                        $('#fckr').append('<option value="" disabled selected>--حدد الخدمة--</option>');
+                                        $.each(data, function(key, value) {
+                                            $('#fckr').append('<option value="' + value.id + '">' + value.namesv + '</option>');
+                                        });
+                                    },
+                                    error: function() {
+                                        alert('حدث خطأ أثناء جلب البيانات.');
+                                    }
+                                });
+                            } else {
+                                $('#fckr').empty();
+                                $('#fckr').append('<option value="" disabled selected>--حدد الخدمة--</option>');
+                            }
+                        });
+                    });
+                </script>
+<script>
+    $(document).ready(function() {
+        // دالة لإضافة قيمة عددية
+        function formatNumber(number) {
+            return number.toLocaleString('ar-IQ', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }        // تهيئة المتغيرات العامة
+        window.servicesData = [];
+        var totalAmount = 0;        // دالة لحساب المجموع الكلي
+        function updateTotal() {
+            var daysCount = parseInt($('#days_count').val()) || 1;            totalAmount = window.servicesData.reduce((sum, service) => {
+                // إذا كانت الخدمة تحتسب بالأيام نضرب في عدد الأيام
+                var serviceTotal = service.isDaily ? 
+                    parseFloat(service.fee) * daysCount : 
+                    parseFloat(service.fee);
+                return sum + serviceTotal;
+            }, 0);
+            $('#total_amount').text(formatNumber(totalAmount) + ' د.ع');
+            $('#total_services').val(formatNumber(totalAmount) + ' د.ع');
+            
+            // حساب المبلغ المتبقي
+            var depositAmount = parseFloat($('#deposit_amount').val()) || 0;
+            var remainingAmount = totalAmount - depositAmount;
+            $('#remaining_amount').val(formatNumber(remainingAmount) + ' د.ع');
+        }
+
+        // دالة لتحديث جدول الخدمات
+        function updateServicesTable() {
+            var tbody = $('#services_table tbody');
+            tbody.empty();            var daysCount = parseInt($('#days_count').val()) || 1;
+            window.servicesData.forEach((service, index) => {
+                // حساب الإجمالي - إذا كانت الخدمة تحتسب بالأيام نضرب في عدد الأيام
+                var totalFee = service.isDaily ? service.fee * daysCount : service.fee;                tbody.append(`
+                    <tr>
+                        <td>${service.name}</td>
+                        <td>${formatNumber(service.fee)} د.ع</td>
+                        <td>
+                            <div class="form-check">
+                                <input class="form-check-input multiply-days" type="checkbox" 
+                                    ${service.isDaily ? 'checked' : ''} 
+                                    data-index="${index}">
+                            </div>
+                        </td>
+                        <td>${formatNumber(totalFee)} د.ع</td>
+                        <td>
+                            <button type="button" class="btn btn-danger btn-sm delete-service" data-index="${index}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `);
+            });
+        }
+
+        // دالة لحساب الفرق بين التواريخ
+        function calculateDays() {
+            var entryDate = $('#entry_date').val();
+            var exitDate = $('#exit_date').val();
+            
+            if (entryDate && exitDate) {
+                var entry = new Date(entryDate);
+                var exit = new Date(exitDate);
+                
+                // حساب الفرق بالأيام
+                var diffTime = Math.abs(exit - entry);
+                var diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                
+                // التحقق من أن تاريخ الخروج لا يسبق تاريخ الدخول
+                if (exit < entry) {
+                    alert('تاريخ الخروج لا يمكن أن يكون قبل تاريخ الدخول');
+                    $('#exit_date').val('');
+                    $('#days_count').val('');
+                } else {
+                    $('#days_count').val(diffDays);
+                }
+            }
+        }
+
+        // تفعيل حساب الأيام عند تغيير أي من التاريخين
+        $('#entry_date, #exit_date').change(function() {
+            calculateDays();
+        });
+
+        // جعل حقل عدد الأيام للقراءة فقط
+        $('#days_count').prop('readonly', true);        // معالجة تغيير الخدمة المحددة
+        $('#fckr').change(function() {
+            var selectedOption = $(this).find('option:selected');
+            var serviceId = selectedOption.val();
+            
+            if (serviceId) {
+                // جلب سعر الخدمة من الخادم
+                $.ajax({
+                    url: "{{ route('getServicePrice') }}",
+                    type: "POST",
+                    data: {
+                        _token: '{{ csrf_token() }}',
+                        service_id: serviceId
+                    },
+                    success: function(data) {
+                        $('#service_fee').val(data.price);
+                    },
+                    error: function() {
+                        alert('حدث خطأ أثناء جلب سعر الخدمة');
+                        $('#service_fee').val('');
+                    }
+                });
+            } else {
+                $('#service_fee').val('');
+            }
+        });
+
+        // معالجة زر إضافة الخدمة
+        $('#add_service').click(function() {
+            var serviceId = $('#fckr').val();
+            var serviceName = $('#fckr option:selected').text();
+            var serviceFee = parseFloat($('#service_fee').val());
+            var specialization = $('#section_id option:selected').text();
+            var subSpecialization = $('#fckn option:selected').text();
+
+            if (!serviceId || !serviceName || isNaN(serviceFee)) {
+                alert('الرجاء اختيار الخدمة وتحديد السعر');
+                return;
+            }
+
+            // تحديد القيمة الافتراضية لاحتساب الأيام
+            var isDaily = serviceName.includes('رقود') || 
+                         serviceName.includes('الأدوية والمستلزمات');
+
+            // إضافة الخدمة إلى المصفوفة
+            window.servicesData.push({
+                id: serviceId,
+                name: serviceName,
+                fee: serviceFee,
+                isDaily: isDaily,
+                specialization: specialization,
+                subSpecialization: subSpecialization
+            });
+
+            // تحديث الجدول والمجاميع
+            updateServicesTable();
+            updateTotal();
+
+            // إعادة تعيين الحقول
+            $('#section_id').val('').trigger('change');
+            $('#fckn').val('').trigger('change');
+            $('#fckr').val('').trigger('change');
+            $('#service_fee').val('');
+        });
+
+        // معالجة حدث النقر على زر الحذف
+        $(document).on('click', '.delete-service', function() {
+            var index = $(this).data('index');
+            window.servicesData.splice(index, 1);
+            updateServicesTable();
+            updateTotal();
+        });
+
+        // تحديث الجدول عند تغيير عدد الأيام
+        $('#days_count').on('change', function() {
+            updateServicesTable();
+            updateTotal();
+        });        // معالجة تغيير خانة احتساب الأيام
+        $(document).on('change', '.multiply-days', function() {
+            var index = $(this).data('index');
+            window.servicesData[index].isDaily = $(this).prop('checked');
+            updateServicesTable();
+            updateTotal();
+        });
+
+        // تحديث المبلغ المتبقي عند تغيير مبلغ التأمينات
+        $('#deposit_amount').on('input', function() {
+            var depositAmount = parseFloat($(this).val()) || 0;
+            var totalServices = window.servicesData.reduce((sum, service) => {
+                var daysCount = parseInt($('#days_count').val()) || 1;
+                var serviceTotal = service.isDaily ? 
+                    parseFloat(service.fee) * daysCount : 
+                    parseFloat(service.fee);
+                return sum + serviceTotal;
+            }, 0);
+            var remainingAmount = totalServices - depositAmount;
+            $('#remaining_amount').val(formatNumber(remainingAmount) + ' د.ع');
+        });
+
+        // معالجة إرسال النموذج
+        $('form').on('submit', function(e) {
+            e.preventDefault();
+            
+            // إظهار البيانات قبل الإرسال للتأكد من صحتها
+            console.log('Services data before submit:', window.servicesData);
+            
+            if (window.servicesData.length === 0) {
+                alert('الرجاء إضافة خدمة واحدة على الأقل');
+                return;
+            }
+            
+            // إضافة بيانات الخدمات إلى النموذج
+            window.servicesData.forEach((service, index) => {
+                console.log('Adding service:', service);
+                
+                $('<input>').attr({
+                    type: 'hidden',
+                    name: `services[${index}][id]`,
+                    value: service.id
+                }).appendTo(this);
+                
+                $('<input>').attr({
+                    type: 'hidden',
+                    name: `services[${index}][fee]`,
+                    value: service.fee
+                }).appendTo(this);
+                
+                $('<input>').attr({
+                    type: 'hidden',
+                    name: `services[${index}][is_daily]`,
+                    value: service.isDaily ? '1' : '0'
+                }).appendTo(this);
+            });
+            
+            // طباعة جميع البيانات المرسلة
+            console.log('Form data:', $(this).serialize());
+            
+            // إرسال النموذج
+            this.submit();
+        });
+    });
+</script>
 </div>
 
-@push('styles')
-<style>
-    .card {
-        border-radius: 15px;
-        box-shadow: 0 0 15px rgba(0,0,0,0.1);
-    }
-    .card-header {
-        border-radius: 15px 15px 0 0 !important;
-        padding: 1rem;
-    }    .bg-gradient-purple {
-        background: #fff;
-        border-bottom: 2px solid #6f42c1;
-    }
-    .bg-gradient-blue {
-        background: #fff;
-        border-bottom: 2px solid #0d6efd;
-    }
-    .bg-gradient-green {
-        background: #fff;
-        border-bottom: 2px solid #198754;
-    }
-    .bg-gradient-orange {
-        background: #fff;
-        border-bottom: 2px solid #fd7e14;
-    }
-    .card-header h2, .card-header h4 {
-        color: #000;
-        font-weight: bold;
-    }
-    .card-header i {
-        color: #666;
-    }
-    .form-control {
-        border-radius: 10px;
-        transition: all 0.3s ease;
-    }
-    .input-group-text {
-        border-radius: 10px 0 0 10px;
-        background: #f8f9fa;
-    }
-    .form-control:focus {
-        border-color: #80bdff;
-        box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
-        transform: translateY(-2px);
-    }
-    .btn {
-        border-radius: 10px;
-        padding: 10px 20px;
-        transition: all 0.3s ease;
-    }
-    .btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-    }
-    .shadow-sm {
-        box-shadow: 0 .125rem .25rem rgba(0,0,0,.075)!important;
-    }
-    .card-header i {
-        margin-left: 10px;
-        font-size: 1.2em;
-    }
-    h4.mb-0 {
-        font-weight: 600;
-    }
-    .select2-container--default .select2-selection--single {
-        height: calc(1.5em + 0.75rem + 2px);
-        border: 1px solid #ced4da;
-        border-radius: 0.25rem;
-    }
-    .select2-container--default .select2-selection--single .select2-selection__rendered {
-        line-height: calc(1.5em + 0.75rem);
-        padding-right: 0.75rem;
-    }
-    .select2-container--default .select2-selection--single .select2-selection__arrow {
-        height: calc(1.5em + 0.75rem);
-    }
-</style>
-@endpush
+ 
 
-@push('scripts')
-<script>
-    // تفعيل التحقق من الحقول
-    (function() {
-        'use strict';
-        window.addEventListener('load', function() {
-            var forms = document.getElementsByClassName('needs-validation');
-            var validation = Array.prototype.filter.call(forms, function(form) {
-                form.addEventListener('submit', function(event) {
-                    if (form.checkValidity() === false) {
-                        event.preventDefault();
-                        event.stopPropagation();
-                    }
-                    form.classList.add('was-validated');
-                }, false);
-            });
-        }, false);
-    })();
-</script>
-<script>
-$(document).ready(function() {
-    // Initialize Select2
-    $('.select2').select2({
-        placeholder: function() {
-            return $(this).data('placeholder');
-        },
-        width: '100%',
-        dir: 'rtl'
-    });    // Service selection change event
-    $('#service_select').on('change', function() {
-        var serviceId = $(this).val();
-        var specializationSelect = $('#specialization_select');
-        var serviceSpecializationSelect = $('#service_specialization_select');
-        
-        // Reset dependent dropdowns
-        specializationSelect.empty().append('<option value="">اختر التخصص...</option>');
-        serviceSpecializationSelect.empty().append('<option value="">اختر الخدمة المتخصصة...</option>');
-        
-        if (serviceId) {
-            specializationSelect.prop('disabled', false);
-            specializationSelect.html('<option value="">جاري التحميل...</option>');
-            // Fetch specializations
-            $.ajax({
-                url: '/get-specializations/' + serviceId,
-                type: 'GET',
-                success: function(data) {                    console.log('Received specializations:', data);
-                    specializationSelect.empty().append('<option value="">اختر التخصص...</option>');
-                    
-                    if (data && data.length > 0) {
-                        data.forEach(function(specialization) {
-                            specializationSelect.append(
-                                $('<option></option>')
-                                    .val(specialization.id)
-                                    .text(specialization.tsname)
-                            );
-                        });
-                        specializationSelect.prop('disabled', false);
-                    } else {
-                        specializationSelect.append('<option value="">لا توجد تخصصات متاحة</option>');
-                        console.log('No specializations found for service:', serviceId);
-                    }
-                },
-                error: function(xhr, status, error) {
-                    console.error('Error fetching specializations:', error);
-                    console.error('Status:', status);
-                    console.error('Response:', xhr.responseText);
-                    alert('حدث خطأ أثناء جلب التخصصات. الرجاء المحاولة مرة أخرى.');
-                }
-            });
-        }
-    });    // Specialization selection change event
-    $('#specialization_select').on('change', function() {
-        var serviceId = $('#service_select').val();
-        var specializationId = $(this).val();
-        var serviceSpecializationSelect = $('#service_specialization_select');
-        
-        // Reset service specialization dropdown
-        serviceSpecializationSelect.empty().append('<option value="">اختر الخدمة المتخصصة...</option>').prop('disabled', false);
-        
-        if (serviceId && specializationId) {
-            // Fetch service specializations            $.ajax({
-                url: '/get-service-specializations/' + serviceId + '/' + specializationId,
-                type: 'GET',
-                success: function(data) {                    console.log('Received service specializations:', data);
-                    serviceSpecializationSelect.empty().append('<option value="">اختر الخدمة المتخصصة...</option>');
-                    
-                    if (data && data.length > 0) {
-                        data.forEach(function(specialization) {
-                            var optionText = specialization.namesv + ' (' + specialization.codesv + ')';
-                            var $option = $('<option></option>')
-                                .val(specialization.id)
-                                .text(optionText)
-                                .data({
-                                    'price': specialization.price,
-                                    'code': specialization.codesv
-                                });
-                            serviceSpecializationSelect.append($option);
-                        });
-                        serviceSpecializationSelect.prop('disabled', false);
-                    } else {
-                        serviceSpecializationSelect.append('<option value="">لا توجد خدمات متخصصة متاحة</option>');
-                        console.log('No service specializations found for service:', serviceId, 'and specialization:', specializationId);
-                    }
-                },
-                error: function(xhr, status, error) {
-                    console.error('Error fetching service specializations:', error);
-                    console.error('Status:', status);
-                    console.error('Response:', xhr.responseText);
-                    alert('حدث خطأ أثناء جلب الخدمات المتخصصة. الرجاء المحاولة مرة أخرى.');
-                }
-            });
-        }
-    });
-
-    // Add service button click event
-    $('#add_service').on('click', function(e) {
-        e.preventDefault();
-        
-        var serviceId = $('#service_select').val();
-        var specializationId = $('#specialization_select').val();
-        var serviceSpecializationId = $('#service_specialization_select').val();
-        var serviceSpecializationOption = $('#service_specialization_select option:selected');
-        
-        if (!serviceId || !specializationId || !serviceSpecializationId) {
-            alert('الرجاء اختيار جميع الخدمات المطلوبة');
-            return;
-        }
-
-        var combinedId = serviceId + '_' + specializationId + '_' + serviceSpecializationId;
-        var serviceName = serviceSpecializationOption.text();
-        var servicePrice = serviceSpecializationOption.data('price') || 0;
-
-        // Check if service already exists
-        if ($('#services_table tbody').find('tr[data-id="' + combinedId + '"]').length === 0) {
-            // Add row to table
-            var newRow = `
-                <tr data-id="${combinedId}">
-                    <td>${serviceSpecializationOption.data('code') || '-'}</td>
-                    <td>${serviceName}</td>
-                    <td>
-                        <input type="number" step="0.01" class="form-control service-price" value="${servicePrice}">
-                    </td>
-                    <td>
-                        <button type="button" class="btn btn-danger btn-sm delete-service">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </td>
-                </tr>
-            `;
-            $('#services_table tbody').append(newRow);
-            updateTotalAmount();
-            updateServicesInput();
-
-            // Reset selections
-            $('#service_select, #specialization_select, #service_specialization_select').val('').trigger('change');
-            $('#specialization_select, #service_specialization_select').prop('disabled', true);
-        } else {
-            alert('هذه الخدمة مضافة مسبقاً');
-        }
-    });
-
-    // Delete service click event
-    $(document).on('click', '.delete-service', function() {
-        $(this).closest('tr').remove();
-        updateTotalAmount();
-        updateServicesInput();
-    });
-
-    // Service price change event
-    $(document).on('change', '.service-price', function() {
-        updateTotalAmount();
-        updateServicesInput();
-    });
-
-    // Update total amount
-    function updateTotalAmount() {
-        var total = 0;
-        $('.service-price').each(function() {
-            total += parseFloat($(this).val()) || 0;
-        });
-        $('#total_amount').text(total.toFixed(2) + ' د.ع');
-    }
-
-    // Update hidden services input
-    function updateServicesInput() {
-        var services = [];
-        $('#services_table tbody tr').each(function() {
-            services.push({
-                id: $(this).data('id'),
-                price: $(this).find('.service-price').val()
-            });
-        });
-        $('#services_input').val(JSON.stringify(services));
-    }
-});
-</script>
-@endpush
 
 @endsection

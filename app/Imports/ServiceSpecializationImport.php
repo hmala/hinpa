@@ -25,21 +25,17 @@ class ServiceSpecializationImport implements ToModel, WithHeadingRow, WithBatchI
     {
         try {
             // تجاهل الصفوف الفارغة
-            if (empty($row['specialization_code']) || empty($row['service_code']) || empty($row['codesv'])) {
+            if (empty($row['service_id']) || empty($row['type_specializations_id']) || empty($row['codesv'])) {
                 Log::info('تم تجاهل صف فارغ: ' . json_encode($row));
                 return null;
             }
 
             // البحث عن الخدمة أو إنشاؤها إذا لم تكن موجودة
-            $service = Service::firstOrCreate(
-                ['sercode' => trim($row['specialization_code'])],
-                ['sername' => 'خدمة ' . trim($row['specialization_code'])]
+            $service = Service::firstOrCreate(                ['id' => trim($row['service_id'])]
             );
 
             // البحث عن التخصص أو إنشاؤه إذا لم يكن موجوداً
-            $specialization = TypeSpecialization::firstOrCreate(
-                ['tscode' => trim($row['service_code'])],
-                ['tsname' => 'تخصص ' . trim($row['service_code'])]
+            $specialization = TypeSpecialization::firstOrCreate(                ['id' => trim($row['type_specializations_id'])]
             );
 
             if ($service && $specialization) {
@@ -61,7 +57,7 @@ class ServiceSpecializationImport implements ToModel, WithHeadingRow, WithBatchI
                     [
                         'codesv' => $codesv,
                         'service_id' => $service->id,
-                        'type_specialization_id' => $specialization->id
+                        'type_specializations_id' => $specialization->id
                     ],
                     [
                         'namesv' => $namesv,

@@ -14,9 +14,15 @@ use Illuminate\Support\Facades\Auth;
 class SalatController extends Controller
 {function __construct()
     {
-    $this->middleware('permission:الصالات', ['only' => ['index','store','pations_approve','create','edit','update','destroy']]);
-    
-    
+        // التحقق من صلاحيات المستخدم
+        $this->middleware(function ($request, $next) {
+            if (Auth::check() && (empty(Auth::user()->roles_name) || Auth::user()->Status === 'غير مفعل')) {
+                return redirect()->route('home');
+            }
+            return $next($request);
+        });
+        
+        $this->middleware('permission:الصالات', ['only' => ['index','store','pations_approve','create','edit','update','destroy']]);
     }
     /**
      * Display a listing of the resource.
@@ -114,12 +120,6 @@ class SalatController extends Controller
      */
     public function show(salat $salat)
     {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     *
      * @param  \App\Models\salat  $salat
      * @return \Illuminate\Http\Response
      */

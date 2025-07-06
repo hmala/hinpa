@@ -1,0 +1,121 @@
+/* تنسيقات خاصة بالطباعة */
+@media print {
+    /* إخفاء العناصر غير المطلوبة للطباعة */
+    .no-print,
+    header, 
+    footer, 
+    nav, 
+    .main-header, 
+    .main-sidebar, 
+    .main-footer, 
+    .side-menu,
+    .action-buttons,
+    .btn {
+        display: none !important;
+    }
+
+    /* إعادة تعيين أنماط الجسم */
+    body {
+        font-size: 14px;
+        direction: rtl;
+        background: white;
+        margin: 0;
+        padding: 0;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    /* إعادة تعيين حاويات التخطيط */
+    .main-content,
+    .wrapper,
+    .content-wrapper {
+        margin: 0 !important;
+        padding: 0 !important;
+        min-height: auto !important;
+        background-color: white !important;
+    }
+
+    .container {
+        width: 100% !important;
+        max-width: none !important;
+        padding: 2cm !important;
+        margin: 0 !important;
+    }
+
+    /* تنسيقات البطاقات للطباعة */
+    .card {
+        border: none !important;
+        box-shadow: none !important;
+    }
+
+    .card-header {
+        border-bottom: 2px solid #000 !important;
+        background: none !important;
+    }
+
+    /* تنسيقات نص الرأس */
+    .text-center h2,
+    .text-center h3 {
+        margin-bottom: 0.5rem !important;
+        color: #000 !important;
+    }
+
+    .invoice-title {
+        font-size: 24pt !important;
+        margin: 1rem 0 !important;
+    }
+
+    .invoice-number {
+        font-size: 14pt !important;
+        margin: 1rem 0 !important;
+    }
+
+    /* تنسيقات الجداول للطباعة */
+    .table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+    }
+
+    .table th,
+    .table td {
+        background-color: #fff !important;
+        border: 1px solid #000 !important;
+        padding: 0.5rem !important;
+        color: #000 !important;
+    }
+
+    th {
+        font-weight: bold !important;
+    }
+
+    /* فرض فواصل الصفحات */
+    .page-break {
+        page-break-after: always;
+    }
+
+    /* تحسين الصور */
+    img {
+        max-width: 100% !important;
+    }
+
+    /* الروابط */
+    a {
+        text-decoration: none !important;
+        color: #000 !important;
+    }
+
+    /* تحسين الخطوط */
+    * {
+        font-family: Arial, sans-serif !important;
+    }
+}
+
+/* إعدادات الصفحة */
+@page {
+    size: A4;
+    margin: 0;
+}
+
+@page :first {
+    margin-top: 0;
+}

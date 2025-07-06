@@ -15,15 +15,16 @@ return new class extends Migration
             $table->id();
             
             $table->string('codesv')->unique()->comment('رمز الخدمة في التخصص');
-            $table->string('namesv')->comment('اسم الخدمة في التخصص');
-            $table->decimal('price', 10, 2)->default(0.00)->comment('السعر');
-            $table->text('notes')->nullable()->comment('ملاحظات');
-            $table->foreignId('service_id')->constrained()->onDelete('cascade');
-            $table->foreignId('type_specialization_id')->constrained()->onDelete('cascade');
-            $table->timestamps();
+            $table->string('namesv');
+            $table->decimal('price', 10, 2)->default(0.00);
+            $table->text('notes')->nullable();
+            $table->unsignedBigInteger('service_id');
+            $table->foreign('service_id')->references('id')->on('services');
+            $table->unsignedBigInteger('type_specializations_id');
+            $table->foreign('type_specializations_id')->references('id')->on('type_specializations');  
+                      $table->timestamps();
             
             // Ensure unique combination of service and specialization
-            $table->unique(['service_id', 'type_specialization_id']);
         });
     }
 

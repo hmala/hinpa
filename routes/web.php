@@ -49,7 +49,7 @@ Route::get('/register', function () {
 
     return view('auth.register', compact('mohs', 'fctypes', 'fck'));
 })->name('register');
-Route::post('/getInstitutions', [RegisterController::class, 'getInstitutions'])->name('getInstitutions');
+Route::post('/getInstitutionsForRegister', [RegisterController::class, 'getInstitutions'])->name('getInstitutionsForRegister');
 Route::get('/complete-registration', [RegisterController::class, 'completeRegistration'])->name('complete.registration');
 Route::resource('mohs', 'App\Http\Controllers\MohsController');
 Route::resource('Fctypes', 'App\Http\Controllers\FctypesController');
@@ -137,6 +137,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::resource('roles', 'App\Http\Controllers\RoleController');
     Route::resource('users', 'App\Http\Controllers\UserController');
     Route::resource('private-wings', PrivateWingController::class);
+    Route::get('private-wings/{privateWing}/invoice', [PrivateWingController::class, 'invoice'])->name('private-wings.invoice');
     Route::resource('services', ServiceController::class);
     Route::resource('type-specializations', TypeSpecializationController::class);
     
@@ -149,6 +150,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::delete('service-specializations/{service}/{specialization}', [ServiceSpecializationController::class, 'destroy'])->name('service-specializations.destroy');
     
     // Private Wing routes
-    Route::get('get-specializations/{serviceId}', [PrivateWingController::class, 'getSpecializations']);
-    Route::get('get-service-specializations/{serviceId}/{specializationId}', [PrivateWingController::class, 'getServiceSpecializations']);
+Route::post('/getSpecializations', [PrivateWingController::class, 'getSpecializations'])->name('getSpecializations');
+Route::post('/getInstitutions', [PrivateWingController::class, 'getInstitutions'])->name('getInstitutions');
+Route::post('/getServicePrice', [PrivateWingController::class, 'getServicePrice'])->name('getServicePrice');
 });

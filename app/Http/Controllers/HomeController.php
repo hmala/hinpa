@@ -13,6 +13,8 @@ use App\Models\surgery;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class HomeController extends Controller
 {
@@ -23,6 +25,11 @@ class HomeController extends Controller
 
     public function index(Request $request)
     {
+        // التحقق من صلاحيات المستخدم
+        if (empty(Auth::user()->roles_name) || Auth::user()->Status === 'غير مفعل') {
+            return view('auth.no-permissions');
+        }
+
         $currentDate = Carbon::now();
         $lastMonth = $currentDate->subMonth()->month;
         $year = $currentDate->year;
@@ -162,119 +169,163 @@ if (in_array("Admin", Auth::user()->roles_name) || in_array("mohst", Auth::user(
         $chartjs1 = app()->chartjs
             ->name('lineChartTest1')
             ->type('bar')
-            ->size(['width' => 400, 'height' => 200])
+            ->size(['width' => 400, 'height' => 300])
             ->labels($labels1)
+            ->options([
+                'responsive' => true,
+                'maintainAspectRatio' => false,
+                'scales' => [
+                    'xAxes' => [
+                        [
+                            'ticks' => [
+                                'beginAtZero' => true,
+                                'fontSize' => 14,
+                                'fontFamily' => 'Cairo, sans-serif',
+                                'fontColor' => '#000',
+                                'fontStyle' => 'bold',
+                                'maxRotation' => 45,
+                                'minRotation' => 45
+                            ],
+                            'gridLines' => [
+                                'display' => false
+                            ]
+                        ]
+                    ],
+                    'yAxes' => [
+                        [
+                            'ticks' => [
+                                'fontSize' => 14,
+                                'fontFamily' => 'Cairo, sans-serif',
+                                'fontColor' => '#000',
+                                'fontStyle' => 'bold'
+                            ],
+                            'gridLines' => [
+                                'color' => 'rgba(0,0,0,0.1)'
+                            ]
+                        ]
+                    ]
+                ],
+                'legend' => [
+                    'display' => true,
+                    'position' => 'top',
+                    'labels' => [
+                        'fontSize' => 16,
+                        'fontFamily' => 'Cairo, sans-serif',
+                        'fontColor' => '#000',
+                        'fontStyle' => 'bold',
+                        'padding' => 20
+                    ]
+                ],
+                'title' => [
+                    'display' => true,
+                    'text' => 'عدد الأسرة الكلية حسب القسم',
+                    'fontSize' => 18,
+                    'fontFamily' => 'Cairo, sans-serif',
+                    'fontColor' => '#000',
+                    'padding' => 20
+                ]
+            ])
             ->datasets([
                 [
-                    "label" => "عدد الاسرة الكلية",
-                    'backgroundColor' => [
-                        "rgb(41, 117, 218)",
-                        "rgb(23, 37, 54)",
-                        "rgb(135, 218, 41)",
-                        "rgb(218, 41, 159)",
-                        "rgb(110, 0, 124)",
-                        "rgb(17, 230, 212)",
-                        "rgb(149, 184, 229)",
-                        "rgb(255, 99, 132)",
-                        "rgb(146, 115, 137)",
-                        "rgb(3, 10, 19)",
-                        "rgb(255, 99, 132)",
-                        "rgb(199, 54, 158)",
-                        "rgb(149, 184, 229)",
-                        "rgb(255, 99, 132)",
-                        "rgb(120, 168, 31)",
-                        "rgb(149, 184, 229)",
-                        "rgb(255, 99, 132)",
-                        "rgb(4, 131, 99)",
-                        "rgb(149, 184, 229)",
-                        "rgb(125, 117, 236)",
-                        "rgb(29, 2, 21)",
-                        "rgb(149, 184, 229)",
-                        "rgb(36, 2, 44)",
-                        "rgb(226, 190, 216)",
-                        "rgb(149, 184, 229)",
-                        "rgb(255, 99, 132)",
-                        "rgb(61, 12, 194)",
-                        "rgb(149, 184, 229)",
-                        "rgb(255, 99, 132)",
-                        "rgb(74, 4, 83)",
-                        "rgb(149, 184, 229)",
-                        "rgb(255, 99, 132)",
-                        "rgb(233, 130, 13)",
-                        "rgb(149, 184, 229)",
-                        "rgb(255, 99, 132)",
-                        "rgb(88, 46, 7)",
-                        "rgb(149, 184, 229)",
-                        "rgb(255, 99, 132)",
-                        "rgb(80, 5, 5)",
-                        "rgb(149, 184, 229)",
-                        "rgb(255, 99, 132)",
-                        "rgb(63, 4, 4)",
-                        "rgb(149, 184, 229)"
-                    ],
+                    "label" => "عدد الأسرة الكلية",
+                    'backgroundColor' => '#4CAF50',
+                    'borderColor' => '#388E3C',
+                    'borderWidth' => 1,
                     'data' => $chart_data1,
-                ],
+                    'barPercentage' => 0.6,
+                    'categoryPercentage' => 0.8
+                ]
             ]);
-        
+
         $chartjs2 = app()->chartjs
             ->name('lineChartTest2')
-            ->type('doughnut')
-            ->size(['width' => 400, 'height' => 200])
+            ->type('pie')
+            ->size(['width' => 400, 'height' => 250])
             ->labels($labels2)
+            ->options([
+                'responsive' => true,
+                'maintainAspectRatio' => false,
+                'legend' => [
+                    'display' => true,
+                    'position' => 'right',
+                    'labels' => [
+                        'fontSize' => 16,
+                        'fontFamily' => 'Cairo, sans-serif',
+                        'fontColor' => '#000',
+                        'fontStyle' => 'bold',
+                        'padding' => 20
+                    ]
+                ],
+                'tooltips' => [
+                    'enabled' => true,
+                    'mode' => 'single',
+                    'titleFontSize' => 16,
+                    'titleFontFamily' => 'Cairo, sans-serif',
+                    'bodyFontSize' => 14,
+                    'bodyFontFamily' => 'Cairo, sans-serif',
+                    'backgroundColor' => 'rgba(0,0,0,0.8)',
+                    'titleMarginBottom' => 10,
+                    'xPadding' => 12,
+                    'yPadding' => 12
+                ]
+            ])
             ->datasets([
                 [
-                    "label" => "عدد اسرة الصالات",
+                    "label" => "عدد أسرة الصالات",
                     'backgroundColor' => [
-                        "rgb(41, 117, 218)",
-                        "rgb(23, 37, 54)",
-                        "rgb(135, 218, 41)",
-                        "rgb(218, 41, 159)",
-                        "rgb(110, 0, 124)",
-                        "rgb(146, 115, 137)",
-                        "rgb(149, 184, 229)",
-                        "rgb(255, 99, 132)",
-                        "rgb(146, 115, 137)",
-                        "rgb(149, 184, 229)",
-                        "rgb(255, 99, 132)",
-                        "rgb(146, 115, 137)",
-                        "rgb(149, 184, 229)",
-                        "rgb(255, 99, 132)",
-                        "rgb(146, 115, 137)",
-                        "rgb(149, 184, 229)",
-                        "rgb(255, 99, 132)",
-                        "rgb(146, 115, 137)",
-                        "rgb(149, 184, 229)",
-                        "rgb(255, 99, 132)",
-                        "rgb(146, 115, 137)",
-                        "rgb(149, 184, 229)",
-                        "rgb(255, 99, 132)",
-                        "rgb(146, 115, 137)",
-                        "rgb(149, 184, 229)",
-                        "rgb(255, 99, 132)",
-                        "rgb(146, 115, 137)",
-                        "rgb(149, 184, 229)",
-                        "rgb(255, 99, 132)",
-                        "rgb(146, 115, 137)",
-                        "rgb(149, 184, 229)",
-                        "rgb(255, 99, 132)",
-                        "rgb(146, 115, 137)",
-                        "rgb(149, 184, 229)",
-                        "rgb(255, 99, 132)",
-                        "rgb(146, 115, 137)",
-                        "rgb(149, 184, 229)",
-                        "rgb(255, 99, 132)",
-                        "rgb(146, 115, 137)",
-                        "rgb(149, 184, 229)",
-                        "rgb(255, 99, 132)",
-                        "rgb(146, 115, 137)",
-                        "rgb(149, 184, 229)"
+                        "#2196F3",
+                        "#4CAF50",
+                        "#FFC107",
+                        "#E91E63",
+                        "#9C27B0",
+                        "#FF5722",
+                        "#607D8B",
+                        "#795548",
+                        "#00BCD4",
+                        "#CDDC39"
                     ],
                     'data' => $chart_data2,
-                ],
+                    'borderColor' => '#fff',
+                    'borderWidth' => 1
+                ]
             ]);
         
-    
-        return view('home', compact('chartjs1', 'chartjs2', 'fkubra', 'khasa', 'kubra', 'mtws', 'sugra', 'salat','monthName','year'));
+        // تحويل البيانات إلى مصفوفة للتصفح
+        $specializations = collect(array_map(function($label, $count) {
+            return [
+                'name' => $label,
+                'count' => $count,
+            ];
+        }, $labels1, $chart_data1))->filter(function($item) {
+            return !empty($item['name']) && $item['count'] > 0;
+        });
+
+        $total = $specializations->sum('count');
+        
+        // إنشاء صفحات يدوياً
+        $page = request()->get('page', 1);
+        $perPage = 10;
+        $items = $specializations->forPage($page, $perPage);
+        
+        $paginatedData = new LengthAwarePaginator(
+            $items,
+            $specializations->count(),
+            $perPage,
+            $page,
+            [
+                'path' => request()->url(),
+                'query' => [
+                    'month' => $month,
+                    'year' => $year
+                ]
+            ]
+        );
+
+        return view('home', compact(
+            'chartjs1', 'chartjs2', 'fkubra', 'khasa', 'kubra', 'mtws', 
+            'sugra', 'salat', 'monthName', 'year', 'labels1', 
+            'chart_data1', 'labels2', 'chart_data2', 'paginatedData', 'total'
+        ));
     }
     
     

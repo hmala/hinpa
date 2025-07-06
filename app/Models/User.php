@@ -27,11 +27,12 @@ class User extends Authenticatable
         'mohcode',
         'fckid',
         'fcktid',
-
+        'roles_name',
+        'Status',
     ];
     public function moh()
     {
-        return $this->belongsTo(Moh::class);
+        return $this->belongsTo(Moh::class, 'mohcode', 'mohcode');
     }
     public function fck()
     {

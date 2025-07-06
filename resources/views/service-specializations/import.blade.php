@@ -79,14 +79,13 @@
                             <h4>تعليمات استيراد البيانات</h4>
                         </div>
                         <div class="card-body">
-                            <p>يجب أن يحتوي ملف Excel على الأعمدة التالية:</p>
-                            <ul>
-                                <li>service_code - كود الخدمة</li>
-                                <li>specialization_code - كود التخصص</li>
+                            <p>يجب أن يحتوي ملف Excel على الأعمدة التالية:</p>                            <ul>
                                 <li>codesv - رمز الخدمة في التخصص</li>
                                 <li>namesv - اسم الخدمة في التخصص</li>
                                 <li>price - السعر</li>
                                 <li>notes - ملاحظات (اختياري)</li>
+                                <li>service_id - معرف الخدمة</li>
+                                <li>type_specializations_id - معرف التخصص</li>
                             </ul>
                         </div>
                     </div>

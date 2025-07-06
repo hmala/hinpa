@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\PrivateWingService;
 
 class PrivateWing extends Model
 {
@@ -43,6 +44,14 @@ class PrivateWing extends Model
         'xray_fees' => 'decimal:2',
         'sonar_fees' => 'decimal:2',
         'deposit_amount' => 'decimal:2',
-        'total_amount' => 'decimal:2'
-    ];
+        'total_amount' => 'decimal:2'    ];
+
+    /**
+     * علاقة مع خدمات الجناح الخاص
+     */    public function services()
+    {
+        return $this->belongsToMany(Service_Specialization::class, 'private_wing_services', 'private_wing_id', 'service_id')
+                    ->withPivot('service_fee', 'is_daily', 'total_amount')
+                    ->withTimestamps();
+    }
 }

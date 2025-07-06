@@ -4,8 +4,16 @@
 @stop
 
 @section('css')
-
+<!-- إضافة خط Cairo -->
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
 <style>
+    .chart-container {
+        direction: rtl;
+        font-family: 'Cairo', sans-serif;
+        width: 100% !important;
+        height: 500px !important;
+        position: relative;
+    }
 	#calendar-container {
 		max-height: 600px;
 		overflow-y: auto;
@@ -18,6 +26,18 @@
 			display: none;
 		}
 	}
+
+    .chart-content {
+        margin: 20px;
+        padding: 15px;
+        background: white;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    .chart-container {
+        min-height: 400px;
+        margin-bottom: 20px;
+    }
 </style>
 <!--  Owl-carousel css-->
 <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet">
@@ -27,7 +47,259 @@
 <link href="{{URL::asset('assets/plugins/jqvmap/jqvmap.min.css')}}" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@0.7.0"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    .table-stats {
+        width: 100%;
+        margin-top: 20px;
+        border-collapse: collapse;
+        direction: rtl;
+        font-family: 'Cairo', sans-serif;
+    }
+    
+    .table-stats th,
+    .table-stats td {
+        padding: 12px 15px;
+        text-align: right;
+        border-bottom: 1px solid #e3e3e3;
+    }
+    
+    .table-stats th {
+        background-color: #f8f9fa;
+        font-weight: 600;
+        color: #1f2937;
+    }
+    
+    .table-stats tr:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .table-stats .stats-value {
+        font-weight: 600;
+        color: #3b82f6;
+    }
+    
+    @media screen and (max-width: 600px) {
+        .table-stats {
+            font-size: 14px;
+        }
+        
+        .table-stats th,
+        .table-stats td {
+            padding: 8px 10px;
+        }
+    }
+    
+    .card-title {
+        font-size: 20px;
+        font-weight: bold;
+        margin-bottom: 20px;
+        text-align: center;
+        color: #333;
+    }
 
+    @media print {
+        /* تنسيق عام للطباعة */
+        @page {
+            size: landscape A4;
+            margin: 0.5cm;
+        }
+
+        /* تنسيق المؤشرات */
+        .row-sm {
+            display: flex !important;
+            flex-direction: row !important;
+            justify-content: space-between !important;
+            page-break-inside: avoid !important;
+        }
+
+        .col-xl-2 {
+            width: 16% !important;
+            flex: 0 0 16% !important;
+            max-width: 16% !important;
+        }
+
+        /* تنسيق البطاقات */
+        .card {
+            border: 1px solid #ddd !important;
+            margin: 5px !important;
+            page-break-inside: avoid !important;
+        }
+
+        .sales-card {
+            background: #f8f9fa !important;
+            color: #000 !important;
+        }
+
+        .text-white {
+            color: #000 !important;
+        }
+
+        /* تنسيق المخطط */
+        .chart-container {
+            width: 100% !important;
+            height: 500px !important;
+            margin: 0 !important;
+            page-break-before: always !important;
+        }
+
+        .chart-content {
+            page-break-inside: avoid !important;
+            border: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        canvas {
+            max-width: 100% !important;
+            height: 100% !important;
+        }
+
+        /* تنسيق النص في المخطط */
+        .chart-title {
+            font-size: 16px !important;
+            margin-bottom: 10px !important;
+        }
+
+        /* إخفاء العناصر غير المطلوبة */
+        .pagination,
+        .btn,
+        #calendar-container,
+        .no-print {
+            display: none !important;
+        }
+
+        /* تنسيق الجدول */
+        .table-stats {
+            page-break-inside: avoid !important;
+            width: 100% !important;
+            margin-bottom: 20px !important;
+        }
+        
+        .table-stats th {
+            background-color: #f8f9fa !important;
+            color: #000 !important;
+            border: 1px solid #ddd;
+            font-size: 12px;
+        }
+        
+        .table-stats td {
+            border: 1px solid #ddd;
+            font-size: 12px;
+        }
+
+        /* تنسيق العنوان */
+        h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 18px;
+        }
+
+        /* إخفاء عناصر غير ضرورية */
+        form,
+        select,
+        .form-group {
+            display: none !important;
+        }
+    }
+
+    @media screen and (max-width: 768px) {
+        .table-stats {
+            font-size: 14px;
+        }
+        
+        .table-stats th, .table-stats td {
+            padding: 8px 10px;
+        }
+        
+        .card-title {
+            font-size: 18px;
+        }
+    }
+
+    /* تنسيق أزرار التنقل */
+    .pagination {
+        direction: rtl;
+        padding: 0;
+        margin: 20px 0;
+        font-family: 'Cairo', sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 5px;
+    }
+    
+    .pagination li {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .pagination li a,
+    .pagination li span {
+        min-width: 35px;
+        height: 35px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 10px;
+        color: #333;
+        background-color: #fff;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        font-size: 14px;
+    }
+    
+    .pagination li.active span {
+        background-color: #0162e8;
+        color: #fff;
+        border-color: #0162e8;
+    }
+    
+    .pagination li a:hover {
+        background-color: #f8f9fa;
+        border-color: #0162e8;
+        color: #0162e8;
+    }
+    
+    .pagination .disabled span {
+        color: #6c757d;
+        background-color: #f8f9fa;
+        border-color: #dee2e6;
+        cursor: not-allowed;
+    }
+    
+    /* تخصيص أزرار التالي والسابق */
+    .pagination li:first-child a,
+    .pagination li:last-child a {
+        min-width: 80px;
+    }
+    
+    .pagination li:first-child a::before {
+        content: "السابق";
+    }
+    
+    .pagination li:last-child a::before {
+        content: "التالي";
+    }
+    
+    .pagination li:first-child a span,
+    .pagination li:last-child a span {
+        display: none;
+    }
+    
+    /* إخفاء الأسهم غير المرغوب فيها */
+    .page-item:first-child .page-link,
+    .page-item:last-child .page-link {
+        border-radius: 4px !important;
+    }
+    
+    /* تنسيق الأرقام */
+    .pagination .page-item:not(:first-child):not(:last-child) .page-link {
+        font-weight: 500;
+    }
+</style>
 @endsection
 @section('page-header')
 <!-- breadcrumb -->
@@ -201,21 +473,70 @@
 		</div>
 
 	</div>
+
+	@if(isset($labels1) && isset($chart_data1))
+	<div class="row row-sm">
+		<div class="col-xl-12">
+			<div class="card mg-b-20">
+				<div class="card-body">
+					<h6 class="card-title mb-3">إحصائيات الأسرة حسب الاختصاص</h6>
+                    <div class="d-flex justify-content-end mb-3">
+                        <button onclick="window.print()" class="btn btn-primary btn-sm no-print">
+                            <i class="fas fa-print"></i> طباعة الإحصائيات
+                        </button>
+                    </div>
+                    <div class="table-responsive">
+                        <div class="table-wrapper">
+                            <table class="table table-stats table-striped table-hover">
+                                <thead class="thead-primary">
+                                    <tr>
+                                        <th class="th-lg">الاختصاص</th>
+                                        <th class="text-center th-md">عدد الأسرة</th>
+                                        <th class="text-center th-sm">النسبة المئوية</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($paginatedData as $item)
+                                    <tr>
+                                        <td><strong>{{ $item['name'] }}</strong></td>
+                                        <td class="stats-value text-center">{{ number_format($item['count']) }}</td>
+                                        <td class="text-center percentage-cell">{{ number_format(($item['count'] / ($total ?: 1)) * 100, 1) }}%</td>
+                                    </tr>
+                                    @endforeach
+                                    <tr class="table-info total-row">
+                                        <td><strong>المجموع الكلي</strong></td>
+                                        <td class="stats-value text-center"><strong>{{ number_format($total) }}</strong></td>
+                                        <td class="text-center"><strong>100%</strong></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <div class="d-flex justify-content-center mt-4">
+                                {{ $paginatedData->links('pagination::bootstrap-4') }}
+                            </div>
+                        </div>
+                    </div>
+				</div>
+			</div>
+		</div>
+	</div>
+	@endif
+
 	<div class="row">
-		<div class="col-md-12 col-lg-12 col-xl-6">
+		<div class="col-md-12 col-lg-12 col-xl-12">
 			<div class="card">
-
-				<div class="card-body" style="width:100%;">
-					{!! $chartjs1->render() !!}
-				</div>
-			</div>
-		</div>
-
-		<div class="col-md-12 col-lg-12 col-xl-6">
-			<div class="card">
-
-				<div class="card-body" style="width:100%;">
-					{!! $chartjs2->render() !!}
+				<div class="card-body chart-content">
+					<div class="chart-container">
+						@if(isset($chartjs2) && $chartjs2)
+							{!! $chartjs2->render() !!}
+						@else
+							<div class="text-center p-5">
+								<div class="alert alert-info" role="alert">
+									<i class="fas fa-info-circle ml-2"></i>
+									لا توجد بيانات متاحة لعرض المخطط البياني
+								</div>
+							</div>
+						@endif
+					</div>
 				</div>
 			</div>
 		</div>
@@ -225,18 +546,8 @@
 </div>
 </div>
 </div>
-<div class="row">
-	<div class="col-md-12">
-		<div class="card">
-			<div class="card-body">
-				<h3 class="text-center">تقويم الإدخالات الطبية حسب الشهر</h3>
-				<div id="calendar-container">
-					<div id="calendar"></div>
-				</div>
-			</div>
-		</div>
-	</div>
-</div>
+
+
 
 <style>
 	#calendar-container {
@@ -323,4 +634,97 @@ document.addEventListener('DOMContentLoaded', function() {
 <!--Internal  index js -->
 <script src="{{URL::asset('assets/js/index.js')}}"></script>
 <script src="{{URL::asset('assets/js/jquery.vmap.sampledata.js')}}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // تكوين الخيارات العامة للرسوم البيانية
+    Chart.defaults.font.family = 'Cairo';
+    Chart.defaults.font.size = 12;
+    Chart.defaults.color = '#333';
+    
+    let charts = document.querySelectorAll('canvas');
+    charts.forEach(canvas => {
+        let chartInstance = Chart.getChart(canvas);
+        if (chartInstance && chartInstance.data && chartInstance.data.datasets && chartInstance.data.datasets.length > 0) {
+            // تحديث خيارات المخطط
+            chartInstance.options = {
+                ...chartInstance.options,
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                        labels: {
+                            font: {
+                                size: 10, // تصغير حجم الخط في وضع الطباعة
+                                family: 'Cairo'
+                            },
+                            boxWidth: 10, // تقليل حجم مربع الألوان
+                            padding: 10
+                        }
+                    },
+                    datalabels: {
+                        display: function(context) {
+                            // إظهار القيم فقط إذا كانت أكبر من الصفر
+                            return context.dataset.data[context.dataIndex] > 0;
+                        },
+                        color: '#000',
+                        font: {
+                            weight: 'bold',
+                            size: 10 // تصغير حجم القيم
+                        },
+                        formatter: (value) => {
+                            if (value === 0) return '';
+                            return value.toLocaleString('ar-SA');
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        display: true,
+                        ticks: {
+                            font: {
+                                size: 10, // تصغير حجم النص على المحور السيني
+                                family: 'Cairo'
+                            },
+                            maxRotation: 45,
+                            minRotation: 45,
+                            autoSkip: false // عدم تخطي أي تسمية
+                        },
+                        grid: {
+                            display: false
+                        }
+                    },
+                    y: {
+                        display: true,
+                        beginAtZero: true,
+                        ticks: {
+                            font: {
+                                size: 10, // تصغير حجم النص على المحور الصادي
+                                family: 'Cairo'
+                            }
+                        }
+                    }
+                },
+                layout: {
+                    padding: {
+                        left: 10,
+                        right: 10,
+                        top: 20,
+                        bottom: 10
+                    }
+                }
+            };
+            
+            // إضافة مستمع لحدث الطباعة
+            window.addEventListener('beforeprint', function() {
+                chartInstance.resize();
+            });
+            
+            // تحديث المخطط
+            chartInstance.update();
+        }
+    });
+});
+</script>
 @endsection

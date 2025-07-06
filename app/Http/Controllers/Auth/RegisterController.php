@@ -13,6 +13,7 @@ use App\Models\fctypes; // هنا استيراد النموذج
 use Illuminate\Foundation\Auth\RegistersUsers;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 
 class RegisterController extends Controller
@@ -92,6 +93,8 @@ class RegisterController extends Controller
             'mohcode'=>$data['section_id'],
             'fcktid'=>$data['fckt'],
             'fckid'=>$data['fckn'],
+            'roles_name' => [], // عدم إعطاء أي صلاحيات للمستخدم الجديد
+            'Status' => 'غير مفعل', // حالة المستخدم غير مفعل
         ]);
     }
     public function register(Request $request)
@@ -143,20 +146,37 @@ class RegisterController extends Controller
             $section_id = $request->input('section_id');
             $fckt = $request->input('fckt');
 
+            // تسجيل البيانات المستلمة للتشخيص
+            Log::info('getInstitutions called with:', [
+                'section_id' => $section_id,
+                'fckt' => $fckt
+            ]);
+
             if (!$section_id || !$fckt) {
-                return response()->json([], 400); // Bad Request إذا كانت البيانات غير مكتملة
+                Log::warning('Missing required parameters in getInstitutions');
+                return response()->json(['error' => 'Missing required parameters'], 400);
             }
 
             // جلب المؤسسات بناءً على section_id و fckt
             $institutions = fck::where('moh_id', $section_id)
                 ->where('fctypesid', $fckt)
+                ->select('id', 'Fckname', 'moh_id', 'fctypesid') // تحديد الأعمدة المطلوبة فقط
                 ->get();
+
+            Log::info('Found institutions:', [
+                'count' => $institutions->count(),
+                'institutions' => $institutions->toArray()
+            ]);
 
             return response()->json($institutions);
         } catch (\Exception $e) {
-            // تسجيل الخطأ في السجلات
-            \Log::error('Error fetching institutions: ' . $e->getMessage());
-            return response()->json(['error' => 'Internal Server Error'], 500);
+            // تسجيل الخطأ في السجلات مع تفاصيل أكثر
+            Log::error('Error fetching institutions: ' . $e->getMessage(), [
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json(['error' => 'Internal Server Error: ' . $e->getMessage()], 500);
         }
     }
     

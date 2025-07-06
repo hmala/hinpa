@@ -15,6 +15,8 @@ return new class extends Migration
     {        Schema::create('services', function (Blueprint $table) {            $table->id();
             $table->integer('sercode')->unique();
             $table->string('sername');
+         $table->unsignedBigInteger('type_specializations_id');
+            $table->foreign('type_specializations_id')->references('id')->on('type_specializations');    
             $table->timestamps();
         });
     }

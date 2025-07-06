@@ -8,21 +8,15 @@ use App\Models\Service_Specialization;
 use App\Imports\ServiceSpecializationImport;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Facades\DB;
 
 class ServiceSpecializationController extends Controller
 {
-    public function __construct()
-    {
-        $this->middleware('auth');
-        $this->middleware('permission:ربط الخدمات بالتخصصات.عرض')->only(['index']);
-        $this->middleware('permission:ربط الخدمات بالتخصصات.اضافة')->only(['create', 'store', 'import', 'showImportForm']);
-        $this->middleware('permission:ربط الخدمات بالتخصصات.تعديل')->only(['edit', 'update']);
-        $this->middleware('permission:ربط الخدمات بالتخصصات.حذف')->only('destroy');
-    }
+  
 
     public function index()
     {
-        $services = Service::with('typeSpecializations')->get();
+        $services = Service::all();
         return view('service-specializations.index', compact('services'));
     }
 
@@ -57,13 +51,16 @@ class ServiceSpecializationController extends Controller
     }    public function import(Request $request)
     {
         $request->validate([
-            'file' => 'required|mimes:xlsx,xls,csv,txt'
+            'file' => 'required|mimes:xlsx,xls,csv'
         ]);
 
         try {
+            \DB::beginTransaction();
             Excel::import(new ServiceSpecializationImport, $request->file('file'));
+            \DB::commit();
             return redirect()->back()->with('success', 'تم استيراد البيانات بنجاح');
         } catch (\Exception $e) {
+            \DB::rollBack();
             return redirect()->back()->with('error', 'حدث خطأ أثناء استيراد البيانات: ' . $e->getMessage());
         }
     }
@@ -117,5 +114,14 @@ class ServiceSpecializationController extends Controller
     public function showImportForm()
     {
         return view('service-specializations.import');
+    }
+
+    public function getServicePrice(Request $request)
+    {
+        $service = Service_Specialization::find($request->service_id);
+        if ($service) {
+            return response()->json(['price' => $service->price]);
+        }
+        return response()->json(['price' => 0], 404);
     }
 }

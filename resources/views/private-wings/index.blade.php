@@ -12,6 +12,10 @@
 <link href="{{ URL::asset('assets/plugins/select2/css/select2.min.css') }}" rel="stylesheet">
 <!--Internal   Notify -->
 <link href="{{ URL::asset('assets/plugins/notify/css/notifIt.css') }}" rel="stylesheet" />
+<!-- Custom CSS -->
+<link href="{{ URL::asset('assets/css/custom/main.css') }}" rel="stylesheet" />
+<link href="{{ URL::asset('assets/css/custom/private-wings.css') }}" rel="stylesheet" />
+<link href="{{ URL::asset('assets/css/custom/print.css') }}" rel="stylesheet" />
 @endsection
 @section('page-header')
 <!-- breadcrumb -->

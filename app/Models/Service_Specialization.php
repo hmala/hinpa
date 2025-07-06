@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Spport\Facades\Auth;
+use Illuminate\Support\Facades\Auth;
 
 class Service_Specialization extends Model
 {
@@ -13,7 +13,7 @@ class Service_Specialization extends Model
     
     protected $fillable = [
         'service_id',
-        'type_specialization_id',
+        'type_specializations_id',
         'codesv',
         'namesv',
         'price',
@@ -27,6 +27,6 @@ class Service_Specialization extends Model
 
     public function typeSpecialization()
     {
-        return $this->belongsTo(TypeSpecialization::class);
+        return $this->belongsTo(TypeSpecialization::class, 'type_specializations_id');
     }
 }

@@ -102,7 +102,7 @@
 
                             if (section_id && fckt) {
                                 $.ajax({
-                                    url: "{{ route('getInstitutions') }}",
+                                    url: "{{ route('getInstitutionsForRegister') }}",
                                     type: "POST",
                                     data: {
                                         _token: '{{ csrf_token() }}',
@@ -110,14 +110,33 @@
                                         fckt: fckt
                                     },
                                     success: function(data) {
+                                        console.log('Success response:', data);
                                         $('#fckn').empty();
                                         $('#fckn').append('<option value="" disabled selected>--حدد المؤسسة--</option>');
-                                        $.each(data, function(key, value) {
-                                            $('#fckn').append('<option value="' + value.id + '">' + value.Fckname + '</option>');
-                                        });
+                                        if (data && data.length > 0) {
+                                            $.each(data, function(key, value) {
+                                                $('#fckn').append('<option value="' + value.id + '">' + value.Fckname + '</option>');
+                                            });
+                                        } else {
+                                            $('#fckn').append('<option value="" disabled>لا توجد مؤسسات متاحة</option>');
+                                        }
                                     },
-                                    error: function() {
-                                        alert('حدث خطأ أثناء جلب البيانات.');
+                                    error: function(xhr, status, error) {
+                                        console.error('AJAX Error:', {
+                                            status: xhr.status,
+                                            statusText: xhr.statusText,
+                                            responseText: xhr.responseText,
+                                            error: error
+                                        });
+                                        
+                                        let errorMessage = 'حدث خطأ أثناء جلب البيانات.';
+                                        if (xhr.responseJSON && xhr.responseJSON.error) {
+                                            errorMessage += ' التفاصيل: ' + xhr.responseJSON.error;
+                                        }
+                                        alert(errorMessage);
+                                        
+                                        $('#fckn').empty();
+                                        $('#fckn').append('<option value="" disabled selected>--خطأ في تحميل البيانات--</option>');
                                     }
                                 });
                             } else {
