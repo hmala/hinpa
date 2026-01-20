@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار نظام الحفظ التلقائي</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <style>
+        body {
+            padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .demo-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: #f9f9f9;
+        }
+        .status-indicator {
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        .status-online {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .status-offline {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-center mb-4">🧪 صفحة اختبار نظام الحفظ التلقائي</h1>
+        
+        <!-- مؤشر حالة الاتصال -->
+        <div id="connection-status" class="status-indicator status-online">
+            ✅ متصل بالإنترنت
+        </div>
+
+        <!-- تعليمات الاختبار -->
+        <div class="alert alert-info">
+            <h4>📝 تعليمات الاختبار:</h4>
+            <ol>
+                <li>املأ النموذج أدناه</li>
+                <li>انتظر ثانيتين (سيتم الحفظ تلقائياً)</li>
+                <li>اضغط F5 لعمل Refresh</li>
+                <li>شاهد البيانات تعود تلقائياً! ✨</li>
+            </ol>
+            <hr>
+            <h5>🔬 اختبارات إضافية:</h5>
+            <ul>
+                <li><strong>اختبار القوائم المنسدلة:</strong> افتح Developer Tools (F12) → Network → اختر "Slow 3G"</li>
+                <li><strong>اختبار فقدان الاتصال:</strong> افصل الإنترنت وشاهد التحذير</li>
+            </ul>
+        </div>
+
+        <!-- نموذج الاختبار -->
+        <div class="demo-section">
+            <h3>📋 نموذج الاختبار</h3>
+            <form id="test-form">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">الاسم الكامل</label>
+                        <input type="text" class="form-control" name="full_name" placeholder="أدخل اسمك الكامل">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">البريد الإلكتروني</label>
+                        <input type="email" class="form-control" name="email" placeholder="example@email.com">
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">رقم الهاتف</label>
+                        <input type="tel" class="form-control" name="phone" placeholder="07XX XXX XXXX">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">تاريخ الميلاد</label>
+                        <input type="date" class="form-control" name="birthdate">
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">القسم الرئيسي</label>
+                        <select class="form-control" name="section" id="section">
+                            <option value="">اختر القسم</option>
+                            <option value="1">الجراحة العامة</option>
+                            <option value="2">الباطنية</option>
+                            <option value="3">الأطفال</option>
+                            <option value="4">النساء والولادة</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">التخصص الفرعي</label>
+                        <select class="form-control" name="specialization" id="specialization">
+                            <option value="">اختر القسم أولاً</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <label class="form-label">الجنس</label><br>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="gender" id="male" value="male">
+                            <label class="form-check-label" for="male">ذكر</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="gender" id="female" value="female">
+                            <label class="form-check-label" for="female">أنثى</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <label class="form-label">الاهتمامات</label><br>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" name="interests[]" id="int1" value="sports">
+                            <label class="form-check-label" for="int1">الرياضة</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" name="interests[]" id="int2" value="reading">
+                            <label class="form-check-label" for="int2">القراءة</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" name="interests[]" id="int3" value="tech">
+                            <label class="form-check-label" for="int3">التقنية</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">ملاحظات</label>
+                    <textarea class="form-control" name="notes" rows="3" placeholder="أدخل أي ملاحظات هنا..."></textarea>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Select2 (متعدد الاختيارات)</label>
+                    <select class="form-control select2" name="languages[]" id="languages" multiple>
+                        <option value="ar">العربية</option>
+                        <option value="en">الإنجليزية</option>
+                        <option value="fr">الفرنسية</option>
+                        <option value="es">الإسبانية</option>
+                        <option value="de">الألمانية</option>
+                    </select>
+                </div>
+
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary btn-lg">إرسال النموذج</button>
+                    <button type="reset" class="btn btn-secondary">إعادة تعيين</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- معلومات الحفظ -->
+        <div class="demo-section">
+            <h3>ℹ️ معلومات الحفظ التلقائي</h3>
+            <div id="save-info">
+                <p><strong>آخر حفظ:</strong> <span id="last-save">لم يتم الحفظ بعد</span></p>
+                <p><strong>عدد الحقول المحفوظة:</strong> <span id="fields-count">0</span></p>
+            </div>
+        </div>
+
+        <!-- سجل الأحداث -->
+        <div class="demo-section">
+            <h3>📋 سجل الأحداث</h3>
+            <div id="event-log" style="max-height: 300px; overflow-y: auto; background: white; padding: 10px; border-radius: 5px;">
+                <p class="text-muted">سيتم عرض الأحداث هنا...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="assets/js/form-autosave.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            // تهيئة Select2
+            $('#languages').select2({
+                placeholder: 'اختر اللغات'
+            });
+
+            // دالة لإضافة حدث للسجل
+            function logEvent(message, type = 'info') {
+                const time = new Date().toLocaleTimeString('ar-IQ');
+                const colors = {
+                    info: 'text-info',
+                    success: 'text-success',
+                    warning: 'text-warning',
+                    error: 'text-danger'
+                };
+                const icon = {
+                    info: 'ℹ️',
+                    success: '✅',
+                    warning: '⚠️',
+                    error: '❌'
+                };
+                
+                $('#event-log').prepend(
+                    `<p class="${colors[type] || 'text-info'}">
+                        <strong>${time}</strong> ${icon[type]} ${message}
+                    </p>`
+                );
+            }
+
+            // تفعيل الحفظ التلقائي
+            FormAutoSave.init('#test-form', {
+                showRestoreMessage: true,
+                onSave: function(data) {
+                    const count = Object.keys(data).length;
+                    const time = new Date().toLocaleTimeString('ar-IQ');
+                    $('#last-save').text(time);
+                    $('#fields-count').text(count);
+                    logEvent(`تم حفظ ${count} حقل تلقائياً`, 'success');
+                },
+                onRestore: function(data) {
+                    const count = Object.keys(data).length;
+                    logEvent(`تم استعادة ${count} حقل من الذاكرة المؤقتة`, 'success');
+                }
+            });
+
+            // محاكاة تحميل القوائم المنسدلة
+            $('#section').change(function() {
+                const sectionId = $(this).val();
+                logEvent('جاري تحميل التخصصات الفرعية...', 'info');
+                
+                if (sectionId) {
+                    // محاكاة بيانات
+                    const mockData = {
+                        '1': [
+                            {id: 11, name: 'جراحة العظام'},
+                            {id: 12, name: 'جراحة القلب'},
+                            {id: 13, name: 'جراحة الأعصاب'}
+                        ],
+                        '2': [
+                            {id: 21, name: 'القلب والأوعية'},
+                            {id: 22, name: 'الكلى'},
+                            {id: 23, name: 'الكبد'}
+                        ],
+                        '3': [
+                            {id: 31, name: 'حديثي الولادة'},
+                            {id: 32, name: 'الأطفال الخدج'},
+                            {id: 33, name: 'طب الأطفال العام'}
+                        ],
+                        '4': [
+                            {id: 41, name: 'الولادة'},
+                            {id: 42, name: 'أمراض النساء'},
+                            {id: 43, name: 'العقم'}
+                        ]
+                    };
+
+                    // محاكاة تأخير الشبكة
+                    setTimeout(function() {
+                        loadSelectDataWithRetry(
+                            'data:application/json,' + encodeURIComponent(JSON.stringify(mockData[sectionId] || [])),
+                            '#specialization',
+                            {
+                                method: 'GET',
+                                defaultText: 'اختر التخصص',
+                                valueField: 'id',
+                                textField: 'name',
+                                retries: 3,
+                                onSuccess: function() {
+                                    logEvent('تم تحميل التخصصات بنجاح', 'success');
+                                },
+                                onError: function() {
+                                    logEvent('فشل تحميل التخصصات', 'error');
+                                }
+                            }
+                        );
+                    }, 500);
+                } else {
+                    $('#specialization').empty().append('<option value="">اختر القسم أولاً</option>');
+                }
+            });
+
+            // معالجة إرسال النموذج
+            $('#test-form').submit(function(e) {
+                e.preventDefault();
+                logEvent('جاري إرسال النموذج...', 'info');
+                
+                // محاكاة إرسال ناجح
+                setTimeout(function() {
+                    logEvent('تم إرسال النموذج بنجاح! البيانات المحفوظة ستُحذف.', 'success');
+                    alert('✅ تم إرسال النموذج بنجاح!\n\nسيتم حذف البيانات المحفوظة الآن.');
+                }, 1000);
+            });
+
+            // مراقبة حالة الاتصال
+            window.addEventListener('offline', function() {
+                $('#connection-status')
+                    .removeClass('status-online')
+                    .addClass('status-offline')
+                    .html('❌ غير متصل بالإنترنت');
+                logEvent('تم فقدان الاتصال بالإنترنت', 'error');
+            });
+
+            window.addEventListener('online', function() {
+                $('#connection-status')
+                    .removeClass('status-offline')
+                    .addClass('status-online')
+                    .html('✅ متصل بالإنترنت');
+                logEvent('تمت استعادة الاتصال بالإنترنت', 'success');
+            });
+
+            // سجل الحدث الأولي
+            logEvent('تم تحميل الصفحة وتفعيل نظام الحفظ التلقائي', 'success');
+        });
+    </script>
+</body>
+</html>

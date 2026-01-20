@@ -1,0 +1,212 @@
+/* تنسيق صفحة النسخ الاحتياطية */
+.backup-page {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    min-height: 100vh;
+    padding: 20px 0;
+}
+
+.backup-card {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    transition: transform 0.3s ease;
+}
+
+.backup-card:hover {
+    transform: translateY(-5px);
+}
+
+.backup-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px;
+    border-bottom: none;
+}
+
+.backup-header h4 {
+    margin: 0;
+    font-weight: 600;
+}
+
+.backup-btn {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    border: none;
+    border-radius: 8px;
+    padding: 10px 20px;
+    color: white;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.backup-btn:hover {
+    background: linear-gradient(135deg, #20c997 0%, #28a745 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+}
+
+.backup-table {
+    background: white;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+}
+
+.backup-table th {
+    background: #f8f9fa;
+    border: none;
+    font-weight: 600;
+    color: #495057;
+    padding: 15px;
+}
+
+.backup-table td {
+    border: none;
+    padding: 15px;
+    vertical-align: middle;
+}
+
+.backup-table tbody tr {
+    transition: all 0.3s ease;
+}
+
+.backup-table tbody tr:hover {
+    background: #f8f9fa;
+    transform: scale(1.01);
+}
+
+.backup-file-icon {
+    font-size: 1.2em;
+    margin-right: 10px;
+}
+
+.backup-size-badge {
+    background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+    border: none;
+    border-radius: 15px;
+    padding: 5px 12px;
+    font-size: 0.85em;
+}
+
+.backup-date {
+    color: #6c757d;
+    font-size: 0.9em;
+}
+
+.backup-actions {
+    display: flex;
+    gap: 5px;
+}
+
+.backup-download-btn {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    border: none;
+    border-radius: 6px;
+    padding: 8px 12px;
+    color: white;
+    transition: all 0.3s ease;
+}
+
+.backup-download-btn:hover {
+    background: linear-gradient(135deg, #20c997 0%, #28a745 100%);
+    transform: translateY(-2px);
+}
+
+.backup-delete-btn {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    border: none;
+    border-radius: 6px;
+    padding: 8px 12px;
+    color: white;
+    transition: all 0.3s ease;
+}
+
+.backup-delete-btn:hover {
+    background: linear-gradient(135deg, #c82333 0%, #dc3545 100%);
+    transform: translateY(-2px);
+}
+
+.backup-empty-state {
+    text-align: center;
+    padding: 40px;
+    color: #6c757d;
+}
+
+.backup-empty-state i {
+    font-size: 3em;
+    margin-bottom: 20px;
+    opacity: 0.5;
+}
+
+.backup-loading-modal .modal-content {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.backup-loading-spinner {
+    width: 3rem;
+    height: 3rem;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #007bff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.backup-alert {
+    border: none;
+    border-radius: 10px;
+    padding: 15px 20px;
+    margin: 20px 0;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.backup-alert-success {
+    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+    color: #155724;
+    border-left: 4px solid #28a745;
+}
+
+.backup-alert-danger {
+    background: linear-gradient(135deg, #f8d7da 0%, #f1aeb5 100%);
+    color: #721c24;
+    border-left: 4px solid #dc3545;
+}
+
+/* تحسين الاستجابة للشاشات الصغيرة */
+@media (max-width: 768px) {
+    .backup-header {
+        padding: 15px;
+    }
+    
+    .backup-header h4 {
+        font-size: 1.2em;
+    }
+    
+    .backup-btn {
+        padding: 8px 15px;
+        font-size: 0.9em;
+    }
+    
+    .backup-table th,
+    .backup-table td {
+        padding: 10px 8px;
+        font-size: 0.9em;
+    }
+    
+    .backup-actions {
+        flex-direction: column;
+        gap: 3px;
+    }
+    
+    .backup-download-btn,
+    .backup-delete-btn {
+        padding: 6px 10px;
+        font-size: 0.8em;
+    }
+}
