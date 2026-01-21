@@ -46,8 +46,79 @@
 <!-- row opened -->
 <div class="row row-sm">
     <div class="col-xl-12">
-        <div class="card">
+        <div class="card">            <div class="card-header pb-0">
+                <div class="d-flex justify-content-between">
+                    <h4 class="card-title mg-b-0">البحث عن مستخدم</h4>
+                </div>
+            </div>
             <div class="card-body">
+                <form action="{{ route('users.index') }}" method="GET">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>اسم المستخدم</label>
+                                <input type="text" class="form-control" name="name" value="{{ request('name') }}" placeholder="ابحث بالاسم">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>البريد الإلكتروني</label>
+                                <input type="text" class="form-control" name="email" value="{{ request('email') }}" placeholder="ابحث بالبريد الإلكتروني">
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group">
+                                <label>الحالة</label>
+                                <select class="form-control" name="status">
+                                    <option value="">الكل</option>
+                                    <option value="مفعل" {{ request('status') == 'مفعل' ? 'selected' : '' }}>مفعل</option>
+                                    <option value="غير مفعل" {{ request('status') == 'غير مفعل' ? 'selected' : '' }}>غير مفعل</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group">
+                                <label>المؤسسة</label>
+                                <select class="form-control" name="fck_id">
+                                    <option value="">الكل</option>
+                                    @foreach($fcks as $fck)
+                                        <option value="{{ $fck->id }}" {{ request('fck_id') == $fck->id ? 'selected' : '' }}>
+                                            {{ $fck->Fckname }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group">
+                                <label>الدائرة</label>
+                                <select class="form-control" name="moh_id">
+                                    <option value="">الكل</option>
+                                    @foreach($mohs_list as $moh)
+                                        <option value="{{ $moh->id }}" {{ request('moh_id') == $moh->id ? 'selected' : '' }}>
+                                            {{ $moh->mohname }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> بحث</button>
+                            <a href="{{ route('users.index') }}" class="btn btn-secondary"><i class="fas fa-redo"></i> إعادة تعيين</a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- row opened -->
+<div class="row row-sm">
+    <div class="col-xl-12">
+        <div class="card">            <div class="card-body">
                 <div class="table-responsive hoverable-table">
                     <table class="table table-hover" id="example1" data-page-length='5' style=" text-align: center;">
                         <thead>

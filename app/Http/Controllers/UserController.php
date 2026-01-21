@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\mohs;
+use App\Models\fck;
 use App\Exports\UsersExport;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -26,8 +27,40 @@ class UserController extends Controller
 */
 public function index(Request $request)
 {
-    $data = User::with(['fck', 'moh'])->orderBy('id', 'DESC')->get(); // جلب جميع السجلات مع العلاقات
-    return view('users.index', compact('data'))->with('i', 0); // الرقم التسلسلي يبدأ من 0
+    $query = User::with(['fck', 'moh']);
+
+    // البحث حسب الاسم
+    if ($request->filled('name')) {
+        $query->where('name', 'LIKE', '%' . $request->name . '%');
+    }
+
+    // البحث حسب البريد الإلكتروني
+    if ($request->filled('email')) {
+        $query->where('email', 'LIKE', '%' . $request->email . '%');
+    }
+
+    // البحث حسب الحالة
+    if ($request->filled('status')) {
+        $query->where('Status', $request->status);
+    }
+
+    // البحث حسب المؤسسة
+    if ($request->filled('fck_id')) {
+        $query->where('fck_id', $request->fck_id);
+    }
+
+    // البحث حسب الدائرة
+    if ($request->filled('moh_id')) {
+        $query->where('moh_id', $request->moh_id);
+    }
+
+    $data = $query->orderBy('id', 'DESC')->get();
+    
+    // جلب قوائم المؤسسات والدوائر للبحث
+    $fcks = fck::all();
+    $mohs_list = mohs::all();
+    
+    return view('users.index', compact('data', 'fcks', 'mohs_list'))->with('i', 0);
 }
 /**
 * Show the form for creating a new resource.
