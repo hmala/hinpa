@@ -21,6 +21,7 @@ class PrivateWing extends Model
         'fiscal_year',
         'statistical_number',
         'table_number',
+        'patient_type',
         'entry_date',
         'exit_date',
         'days_count',

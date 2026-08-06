@@ -82,6 +82,17 @@
                                 <h4 class="mb-0"><i class="fas fa-user-injured"></i> معلومات المريض</h4>
                             </div>
                             <div class="card-body">
+                                <div class="row mb-3 bg-light p-3 rounded border mx-1">
+                                    <div class="col-md-12 text-center">
+                                        <label class="form-label fw-bold d-block text-primary">مسار / نوع المريض</label>
+                                        <input type="hidden" name="patient_type" id="patient_type" value="{{ request('patient_type', 'inpatient') }}">
+                                        @if(request('patient_type') == 'outpatient')
+                                            <span class="badge bg-success p-2 fs-6 text-white"><i class="fas fa-user-clock me-1"></i> مريض غير راقد (خدمة خارجية / عيادة)</span>
+                                        @else
+                                            <span class="badge bg-primary p-2 fs-6 text-white"><i class="fas fa-bed me-1"></i> مريض راقد (إقامة كاملة)</span>
+                                        @endif
+                                    </div>
+                                </div>
                                 <div class="row">
                                     <div class="col-md-4 mb-3">
                                         <label for="hospital" class="form-label fw-bold">المستشفى</label>

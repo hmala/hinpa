@@ -175,6 +175,7 @@ class PrivateWingController extends Controller
             'hospital' => 'required|string|max:255',
             'health_department' => 'required|string|max:255',
             'patient_name' => 'required|string|max:255',
+            'patient_type' => 'nullable|in:inpatient,outpatient',
             'patient_nationality' => 'nullable|string|max:255',
             'sequential_number' => 'required|integer',
             'annual_number' => 'required|integer',
@@ -182,8 +183,10 @@ class PrivateWingController extends Controller
             'statistical_number' => 'required|string|max:255',
             'table_number' => 'nullable|string|max:255',
             'entry_date' => 'required|date',
+            'entry_time' => 'nullable|date_format:H:i',
             'exit_date' => 'nullable|date',
-            'days_count' => 'required|integer',
+            'exit_time' => 'nullable|date_format:H:i',
+            'days_count' => 'nullable|integer',
             'deposits' => 'required|array|min:1',
             'deposits.*.amount' => 'required|numeric|min:0',
             'deposits.*.number' => 'required|string|max:255',
@@ -200,24 +203,35 @@ class PrivateWingController extends Controller
             'services.*.doctor_id' => 'nullable|exists:doctors,id',
             'services.*.operation_degree' => 'nullable|string|max:255'
         ]);
+        $patientType = $validated['patient_type'] ?? 'inpatient';
+        $isOutpatient = ($patientType === 'outpatient');
 
         try {
             DB::beginTransaction();
 
+            $calculatedDays = $isOutpatient ? 0 : $this->calculateHotelDays(
+                $validated['entry_date'],
+                $validated['entry_time'] ?? null,
+                $validated['exit_date'] ?? null,
+                $validated['exit_time'] ?? null
+            );
             // إنشاء سجل الجناح الخاص
             $privateWing = PrivateWing::create([
                 'hospital' => $validated['hospital'],
                 'health_department' => $validated['health_department'],
                 'patient_name' => $validated['patient_name'],
+                'patient_type' => $patientType,
                 'patient_nationality' => $validated['patient_nationality'] ?? null,
                 'annual_number' => $validated['annual_number'],
                 'fiscal_year' => $validated['fiscal_year'],
                 'statistical_number' => $validated['statistical_number'],
                 'table_number' => $validated['table_number'] ?? null,
                 'entry_date' => $validated['entry_date'],
-                'exit_date' => $validated['exit_date'],
-                'days_count' => $validated['days_count'],
-                'is_insured' => (int)($request->input('is_insured', 0))
+                'entry_time' => $validated['entry_time'] ?? null,
+                'exit_date' => $isOutpatient ? null : ($validated['exit_date'] ?? null),
+                'exit_time' => $isOutpatient ? null : ($validated['exit_time'] ?? null),
+                'days_count' => $calculatedDays,
+                'is_insured' => $validated['is_insured'] ?? false
             ]);
 
             // إضافة وصولات التأمين
@@ -247,8 +261,8 @@ class PrivateWingController extends Controller
                 Log::info('doctor_id value:', ['value' => $service['doctor_id']]);
                 Log::info('doctor_id type:', ['type' => gettype($service['doctor_id'])]);
                 
-                $serviceAmount = $service['is_daily'] ? 
-                    $service['fee'] * $validated['days_count'] : 
+                $serviceAmount = ($service['is_daily'] && !$isOutpatient) ? 
+                    $service['fee'] * max(1, $calculatedDays) : 
                     $service['fee'];
                 
                 // حساب مبالغ الضمان بناءً على النسبة المحددة
@@ -405,14 +419,17 @@ class PrivateWingController extends Controller
             'hospital' => 'required|string|max:255',
             'health_department' => 'required|string|max:255',
             'patient_name' => 'required|string|max:255',
+            'patient_type' => 'nullable|in:inpatient,outpatient',
             'patient_nationality' => 'nullable|string|max:255',
             'annual_number' => 'required|integer',
             'fiscal_year' => 'required|integer',
             'statistical_number' => 'required|string|max:255',
             'table_number' => 'nullable|string|max:255',
             'entry_date' => 'required|date',
+            'entry_time' => 'nullable|date_format:H:i',
             'exit_date' => 'nullable|date',
-            'days_count' => 'required|integer',
+            'exit_time' => 'nullable|date_format:H:i',
+            'days_count' => 'nullable|integer',
             'deposits' => 'nullable|array',
             'deposits.*.amount' => 'required|numeric|min:0',
             'deposits.*.number' => 'required|string|max:255',
@@ -429,44 +446,44 @@ class PrivateWingController extends Controller
             'services.*.operation_degree' => 'nullable|string|max:255'
         ]);
 
+        $patientType = $validated['patient_type'] ?? ($privateWing->patient_type ?? 'inpatient');
+        $isOutpatient = ($patientType === 'outpatient');
+
         try {
             DB::beginTransaction();
+
+            $calculatedDays = $isOutpatient ? 0 : $this->calculateHotelDays(
+                $validated['entry_date'],
+                $validated['entry_time'] ?? null,
+                $validated['exit_date'] ?? null,
+                $validated['exit_time'] ?? null
+            );
 
             // تحديث بيانات الجناح الخاص
             $privateWing->update([
                 'hospital' => $validated['hospital'],
                 'health_department' => $validated['health_department'],
                 'patient_name' => $validated['patient_name'],
+                'patient_type' => $patientType,
                 'patient_nationality' => $validated['patient_nationality'] ?? null,
                 'annual_number' => $validated['annual_number'],
                 'fiscal_year' => $validated['fiscal_year'],
                 'statistical_number' => $validated['statistical_number'],
                 'table_number' => $validated['table_number'] ?? null,
                 'entry_date' => $validated['entry_date'],
-                'exit_date' => $validated['exit_date'],
-                'days_count' => $validated['days_count'],
-                'is_insured' => (int)($request->input('is_insured', 0))
+                'entry_time' => $validated['entry_time'] ?? null,
+                'exit_date' => $isOutpatient ? null : ($validated['exit_date'] ?? null),
+                'exit_time' => $isOutpatient ? null : ($validated['exit_time'] ?? null),
+                'days_count' => $calculatedDays,
+                'is_insured' => $validated['is_insured'] ?? false
             ]);
-
-            // حساب عدد الأيام إذا لم يتم تحديثها
-            if ($validated['exit_date'] && $validated['entry_date']) {
-                $daysCount = \Carbon\Carbon::parse($validated['exit_date'])->diffInDays(\Carbon\Carbon::parse($validated['entry_date'])) + 1;
-                $privateWing->update(['days_count' => $daysCount]);
-            }
-
-            // لا نحذف الوصولات المحذوفة - نحافظ على الوصولات الموجودة
-            // if ($request->filled('deleted_receipts')) {
-            //     $deletedReceiptIds = explode(',', $request->deleted_receipts);
-            //     \App\Models\PrivateWingReceipt::whereIn('id', $deletedReceiptIds)->delete();
-            // }
-
             // حذف الخدمات القديمة وإعادة إنشائها
             $privateWing->privateWingServices()->delete();
 
             $totalAmount = 0;
             foreach ($validated['services'] as $service) {
-                $serviceAmount = $service['is_daily'] ?
-                    $service['fee'] * ($privateWing->days_count ?: 1) :
+                $serviceAmount = ($service['is_daily'] && !$isOutpatient) ?
+                    $service['fee'] * max(1, $calculatedDays) :
                     $service['fee'];
 
                 // حساب مبالغ الضمان بناءً على النسبة
@@ -759,5 +776,31 @@ class PrivateWingController extends Controller
 
         $latestRefund = $privateWing->refunds->first();
         return view('private-wings.refund-receipt', compact('privateWing', 'latestRefund'));
+    }
+
+    /**
+     * حساب عدد الأيام بنظام فنادق (قبل 12 ظهر يعتبر اليوم نفسه، بعد 12 يضاف يوم)
+     */
+    private function calculateHotelDays($entryDate, $entryTime, $exitDate, $exitTime)
+    {
+        if (!$entryDate || !$exitDate) {
+            return 1;
+        }
+
+        $entry = \Carbon\Carbon::parse($entryDate . ' ' . ($entryTime ?: '00:00'));
+        $exit = \Carbon\Carbon::parse($exitDate . ' ' . ($exitTime ?: '00:00'));
+
+        $entry->startOfDay();
+        $exit->startOfDay();
+
+        if ($exit->lt($entry)) {
+            return 1;
+        }
+
+        $diff = $exit->diffInDays($entry);
+        if ($exit->format('H:i') >= '12:00') {
+            $diff += 1;
+        }
+        return $diff < 1 ? 1 : $diff;
     }
 }

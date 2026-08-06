@@ -54,6 +54,22 @@
                                 <h4 class="mb-0"><i class="fas fa-user-injured"></i> معلومات المريض</h4>
                             </div>
                             <div class="card-body">
+                                <div class="row mb-3 bg-white p-2 rounded border mx-1">
+                                    <div class="col-md-12">
+                                        <label class="form-label fw-bold d-block text-primary"><i class="fas fa-hospital-user me-1"></i> مسار / نوع المريض</label>
+                                        <div class="btn-group w-100" role="group">
+                                            <input type="radio" class="btn-check" name="patient_type" id="patient_type_inpatient" value="inpatient" {{ ($privateWing->patient_type ?? "inpatient") == "inpatient" ? "checked" : "" }} autocomplete="off">
+                                            <label class="btn btn-outline-primary fw-bold" for="patient_type_inpatient">
+                                                <i class="fas fa-bed me-1"></i> مريض راقد (إقامة كاملة)
+                                            </label>
+
+                                            <input type="radio" class="btn-check" name="patient_type" id="patient_type_outpatient" value="outpatient" {{ ($privateWing->patient_type ?? "inpatient") == "outpatient" ? "checked" : "" }} autocomplete="off">
+                                            <label class="btn btn-outline-success fw-bold" for="patient_type_outpatient">
+                                                <i class="fas fa-user-clock me-1"></i> مريض غير راقد (خدمة خارجية / عيادة)
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
                                 <div class="row">
                                     <div class="col-md-4 mb-3">
                                         <label for="hospital" class="form-label fw-bold">المستشفى</label>
@@ -135,6 +151,22 @@
                                 <h4 class="mb-0"><i class="fas fa-money-bill-wave"></i> الرسوم والخدمات</h4>
                             </div>
                             <div class="card-body">
+                                <div class="row mb-3 bg-white p-2 rounded border mx-1">
+                                    <div class="col-md-12">
+                                        <label class="form-label fw-bold d-block text-primary"><i class="fas fa-hospital-user me-1"></i> مسار / نوع المريض</label>
+                                        <div class="btn-group w-100" role="group">
+                                            <input type="radio" class="btn-check" name="patient_type" id="patient_type_inpatient" value="inpatient" {{ ($privateWing->patient_type ?? "inpatient") == "inpatient" ? "checked" : "" }} autocomplete="off">
+                                            <label class="btn btn-outline-primary fw-bold" for="patient_type_inpatient">
+                                                <i class="fas fa-bed me-1"></i> مريض راقد (إقامة كاملة)
+                                            </label>
+
+                                            <input type="radio" class="btn-check" name="patient_type" id="patient_type_outpatient" value="outpatient" {{ ($privateWing->patient_type ?? "inpatient") == "outpatient" ? "checked" : "" }} autocomplete="off">
+                                            <label class="btn btn-outline-success fw-bold" for="patient_type_outpatient">
+                                                <i class="fas fa-user-clock me-1"></i> مريض غير راقد (خدمة خارجية / عيادة)
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
                                 <div class="row mb-4">
                                     <div class="col-12">
                                         <div class="card shadow-sm">
@@ -142,6 +174,22 @@
                                                 <h5 class="mb-0">إضافة الخدمات والرسوم</h5>
                                             </div>
                                             <div class="card-body">
+                                <div class="row mb-3 bg-white p-2 rounded border mx-1">
+                                    <div class="col-md-12">
+                                        <label class="form-label fw-bold d-block text-primary"><i class="fas fa-hospital-user me-1"></i> مسار / نوع المريض</label>
+                                        <div class="btn-group w-100" role="group">
+                                            <input type="radio" class="btn-check" name="patient_type" id="patient_type_inpatient" value="inpatient" {{ ($privateWing->patient_type ?? "inpatient") == "inpatient" ? "checked" : "" }} autocomplete="off">
+                                            <label class="btn btn-outline-primary fw-bold" for="patient_type_inpatient">
+                                                <i class="fas fa-bed me-1"></i> مريض راقد (إقامة كاملة)
+                                            </label>
+
+                                            <input type="radio" class="btn-check" name="patient_type" id="patient_type_outpatient" value="outpatient" {{ ($privateWing->patient_type ?? "inpatient") == "outpatient" ? "checked" : "" }} autocomplete="off">
+                                            <label class="btn btn-outline-success fw-bold" for="patient_type_outpatient">
+                                                <i class="fas fa-user-clock me-1"></i> مريض غير راقد (خدمة خارجية / عيادة)
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
                                                 <div class="row mb-3">
                                                     <div class="col-md-8">
                                                         <div class="row">
@@ -264,6 +312,22 @@
                                 <h4 class="mb-0"><i class="fas fa-receipt"></i> وصولات التأمين</h4>
                             </div>
                             <div class="card-body">
+                                <div class="row mb-3 bg-white p-2 rounded border mx-1">
+                                    <div class="col-md-12">
+                                        <label class="form-label fw-bold d-block text-primary"><i class="fas fa-hospital-user me-1"></i> مسار / نوع المريض</label>
+                                        <div class="btn-group w-100" role="group">
+                                            <input type="radio" class="btn-check" name="patient_type" id="patient_type_inpatient" value="inpatient" {{ ($privateWing->patient_type ?? "inpatient") == "inpatient" ? "checked" : "" }} autocomplete="off">
+                                            <label class="btn btn-outline-primary fw-bold" for="patient_type_inpatient">
+                                                <i class="fas fa-bed me-1"></i> مريض راقد (إقامة كاملة)
+                                            </label>
+
+                                            <input type="radio" class="btn-check" name="patient_type" id="patient_type_outpatient" value="outpatient" {{ ($privateWing->patient_type ?? "inpatient") == "outpatient" ? "checked" : "" }} autocomplete="off">
+                                            <label class="btn btn-outline-success fw-bold" for="patient_type_outpatient">
+                                                <i class="fas fa-user-clock me-1"></i> مريض غير راقد (خدمة خارجية / عيادة)
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
                                 <div id="receipts-container">
                                     @foreach($privateWing->receipts as $index => $receipt)
                                     <div class="row receipt-row mb-3 existing-receipt" data-receipt-id="{{ $receipt->id }}" data-amount="{{ $receipt->amount }}" data-interest="{{ $receipt->interest_amount }}">
@@ -309,6 +373,22 @@
                                 <h4 class="mb-0"><i class="fas fa-calculator"></i> الإجماليات</h4>
                             </div>
                             <div class="card-body">
+                                <div class="row mb-3 bg-white p-2 rounded border mx-1">
+                                    <div class="col-md-12">
+                                        <label class="form-label fw-bold d-block text-primary"><i class="fas fa-hospital-user me-1"></i> مسار / نوع المريض</label>
+                                        <div class="btn-group w-100" role="group">
+                                            <input type="radio" class="btn-check" name="patient_type" id="patient_type_inpatient" value="inpatient" {{ ($privateWing->patient_type ?? "inpatient") == "inpatient" ? "checked" : "" }} autocomplete="off">
+                                            <label class="btn btn-outline-primary fw-bold" for="patient_type_inpatient">
+                                                <i class="fas fa-bed me-1"></i> مريض راقد (إقامة كاملة)
+                                            </label>
+
+                                            <input type="radio" class="btn-check" name="patient_type" id="patient_type_outpatient" value="outpatient" {{ ($privateWing->patient_type ?? "inpatient") == "outpatient" ? "checked" : "" }} autocomplete="off">
+                                            <label class="btn btn-outline-success fw-bold" for="patient_type_outpatient">
+                                                <i class="fas fa-user-clock me-1"></i> مريض غير راقد (خدمة خارجية / عيادة)
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
                                 <div class="row">
                                     <div class="col-md-3 mb-3">
                                         <label class="form-label fw-bold">إجمالي الخدمات</label>

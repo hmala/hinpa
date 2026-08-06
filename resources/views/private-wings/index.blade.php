@@ -58,9 +58,21 @@
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h2 class="mb-0">قائمة حسابات الأجنحة الخاصة</h2>
                     <div>
-                        <button type="button" class="btn btn-info ms-2" data-bs-toggle="modal" data-bs-target="#searchModal" onclick="$('#searchModal').modal('show');">بحث متقدم</button>
-                        <a href="{{ route('private-wings.create', ['clear' => 1]) }}" class="btn btn-primary">إضافة جديد</a>
-                        <a href="{{ route('private-wings.trashed') }}" class="btn btn-warning ms-2">عرض المبطلات</a>
+                        <button type="button" class="btn btn-info ms-2" data-bs-toggle="modal" data-bs-target="#searchModal" onclick="$('#searchModal').modal('show');">
+                            <i class="fas fa-search"></i> بحث متقدم
+                        </button>
+                        <button type="button" class="btn btn-success ms-2" onclick="window.print()">
+                            <i class="fas fa-print"></i> طباعة
+                        </button>
+                        <a href="{{ route('private-wings.export', request()->query()) }}" class="btn btn-primary ms-2">
+                            <i class="fas fa-file-excel"></i> تصدير Excel
+                        </a>
+                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#selectPatientTypeModal">
+                            <i class="fas fa-plus"></i> إضافة جديد
+                        </button>
+                        <a href="{{ route('private-wings.trashed') }}" class="btn btn-warning ms-2">
+                            <i class="fas fa-archive"></i> عرض المبطلات
+                        </a>
                     </div>
                 </div>
 
@@ -300,6 +312,51 @@
     </div>
 </div>
 
+<!-- Modal اختيار نوع المريض عند الإضافة -->
+<div class="modal fade" id="selectPatientTypeModal" tabindex="-1" role="dialog" aria-labelledby="selectPatientTypeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content shadow-lg border-0">
+            <div class="modal-header bg-gradient-purple text-white">
+                <h5 class="modal-title text-white mb-0" id="selectPatientTypeModalLabel"><i class="fas fa-user-plus me-2"></i> اختيار مسار التسجيل</h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body p-4 text-center">
+                <p class="text-muted fw-bold mb-4">يرجى تحديد نوع مسار المريض للمتابعة:</p>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <a href="{{ route('private-wings.create', ['patient_type' => 'inpatient', 'clear' => 1]) }}" class="card text-decoration-none border-primary h-100 shadow-sm hover-card">
+                            <div class="card-body p-4 text-center">
+                                <div class="mb-3 text-primary">
+                                    <i class="fas fa-bed fa-3x"></i>
+                                </div>
+                                <h5 class="fw-bold text-primary mb-2">مريض راقد</h5>
+                                <p class="small text-muted mb-0">إقامة كاملة في الأجنحة مع أجور السرير والتغذية</p>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-6">
+                        <a href="{{ route('private-wings.create', ['patient_type' => 'outpatient', 'clear' => 1]) }}" class="card text-decoration-none border-success h-100 shadow-sm hover-card">
+                            <div class="card-body p-4 text-center">
+                                <div class="mb-3 text-success">
+                                    <i class="fas fa-user-clock fa-3x"></i>
+                                </div>
+                                <h5 class="fw-bold text-success mb-2">مريض غير راقد / زيارة</h5>
+                                <p class="small text-muted mb-0">خدمة خارجية / عيادة / فحوصات مباشرة دون إقامة</p>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.hover-card { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+.hover-card:hover { transform: translateY(-5px); box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important; }
+</style>
 @endsection
 @section('js')
 <!-- Internal Data tables -->
