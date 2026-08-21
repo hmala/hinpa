@@ -26,6 +26,7 @@
 <!-- breadcrumb -->
 @endsection
 @section('content')
+@php $serviceSpecializations = $serviceSpecializations ?? collect(); @endphp
 <div class="row">
     <div class="col-xl-12">
         <div class="card">

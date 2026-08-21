@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class fck extends Model
+class Fck extends Model
 {
     use HasFactory;
     
@@ -14,6 +14,11 @@ class fck extends Model
     public function moh()
     {
         return $this->belongsTo('App\Models\mohs');
+    }
+    
+    public function fckType()
+    {
+        return $this->belongsTo(Fctypes::class, 'fctypesid');
     }
     
     public function fck()

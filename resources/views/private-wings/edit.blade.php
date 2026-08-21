@@ -16,10 +16,21 @@
 <link href="{{ URL::asset('assets/css/custom/main.css') }}" rel="stylesheet" />
 <link href="{{ URL::asset('assets/css/custom/private-wings.css') }}" rel="stylesheet" />
 <link href="{{ URL::asset('assets/css/custom/print.css') }}" rel="stylesheet" />
+<style>
+    /* إخفاء أعمدة الضمان افتراضياً عند عدم وجود ضمان */
+    @if(!$privateWing->is_insured)
+    .insurance-header,
+    .insurance-column {
+        display: none;
     }
+    @endif
 </style>
 @endsection
 @section('content')
+@php
+    $services = $services ?? collect();
+    $doctors = $doctors ?? collect();
+@endphp
 <div class="container-fluid">
     <div class="row justify-content-center">
         <div class="col-md-12">
@@ -86,31 +97,29 @@
                                 </div>
 
                                 <div class="row">
-                                    <div class="col-md-6 mb-3">
-                                        <label for="table_number" class="form-label fw-bold">رقم الطبلة</label>
-                                        <input type="text" class="form-control shadow-sm" id="table_number" name="table_number" value="{{ $privateWing->table_number }}">
-                                    </div>
-                                    <div class="col-md-6 mb-3">
+                                    <div class="col-md-12 mb-3">
                                         <label for="annual_number" class="form-label fw-bold">الترقيم السنوي ({{ $privateWing->fiscal_year }}) - على مستوى المؤسسة</label>
                                         <input type="text" class="form-control shadow-sm" id="annual_number" name="annual_number" value="{{ $privateWing->annual_number }}" readonly>
                                     </div>
                                 </div>
 
                                 <div class="row">
-                                    <div class="col-md-4 mb-3">
+                                    <div class="col-md-4 mb-3" id="statistical_number_container">
                                         <label for="statistical_number" class="form-label fw-bold">الرقم الإحصائي</label>
                                         <input type="text" class="form-control shadow-sm" id="statistical_number" name="statistical_number" value="{{ $privateWing->statistical_number }}" required>
                                     </div>
                                 </div>
 
-                                <div class="row">
+                                <div class="row" id="time_and_days_row">
                                     <div class="col-md-4 mb-3">
                                         <label for="entry_date" class="form-label fw-bold">تاريخ الدخول</label>
                                         <input type="date" class="form-control shadow-sm" id="entry_date" name="entry_date" value="{{ $privateWing->entry_date ? $privateWing->entry_date->format('Y-m-d') : '' }}" required>
+                                        <input type="time" class="form-control shadow-sm mt-1" id="entry_time" name="entry_time" value="{{ $privateWing->entry_time ? \Carbon\Carbon::parse($privateWing->entry_time)->format('H:i') : '00:00' }}">
                                     </div>
                                     <div class="col-md-4 mb-3">
                                         <label for="exit_date" class="form-label fw-bold">تاريخ الخروج</label>
                                         <input type="date" class="form-control shadow-sm" id="exit_date" name="exit_date" value="{{ $privateWing->exit_date ? $privateWing->exit_date->format('Y-m-d') : '' }}">
+                                        <input type="time" class="form-control shadow-sm mt-1" id="exit_time" name="exit_time" value="{{ $privateWing->exit_time ? \Carbon\Carbon::parse($privateWing->exit_time)->format('H:i') : '00:00' }}">
                                     </div>
                                        <div class="col-md-4 mb-3">
                                         <label for="days_count" class="form-label fw-bold">عدد الأيام</label>
@@ -151,22 +160,7 @@
                                 <h4 class="mb-0"><i class="fas fa-money-bill-wave"></i> الرسوم والخدمات</h4>
                             </div>
                             <div class="card-body">
-                                <div class="row mb-3 bg-white p-2 rounded border mx-1">
-                                    <div class="col-md-12">
-                                        <label class="form-label fw-bold d-block text-primary"><i class="fas fa-hospital-user me-1"></i> مسار / نوع المريض</label>
-                                        <div class="btn-group w-100" role="group">
-                                            <input type="radio" class="btn-check" name="patient_type" id="patient_type_inpatient" value="inpatient" {{ ($privateWing->patient_type ?? "inpatient") == "inpatient" ? "checked" : "" }} autocomplete="off">
-                                            <label class="btn btn-outline-primary fw-bold" for="patient_type_inpatient">
-                                                <i class="fas fa-bed me-1"></i> مريض راقد (إقامة كاملة)
-                                            </label>
 
-                                            <input type="radio" class="btn-check" name="patient_type" id="patient_type_outpatient" value="outpatient" {{ ($privateWing->patient_type ?? "inpatient") == "outpatient" ? "checked" : "" }} autocomplete="off">
-                                            <label class="btn btn-outline-success fw-bold" for="patient_type_outpatient">
-                                                <i class="fas fa-user-clock me-1"></i> مريض غير راقد (خدمة خارجية / عيادة)
-                                            </label>
-                                        </div>
-                                    </div>
-                                </div>
                                 <div class="row mb-4">
                                     <div class="col-12">
                                         <div class="card shadow-sm">
@@ -174,22 +168,7 @@
                                                 <h5 class="mb-0">إضافة الخدمات والرسوم</h5>
                                             </div>
                                             <div class="card-body">
-                                <div class="row mb-3 bg-white p-2 rounded border mx-1">
-                                    <div class="col-md-12">
-                                        <label class="form-label fw-bold d-block text-primary"><i class="fas fa-hospital-user me-1"></i> مسار / نوع المريض</label>
-                                        <div class="btn-group w-100" role="group">
-                                            <input type="radio" class="btn-check" name="patient_type" id="patient_type_inpatient" value="inpatient" {{ ($privateWing->patient_type ?? "inpatient") == "inpatient" ? "checked" : "" }} autocomplete="off">
-                                            <label class="btn btn-outline-primary fw-bold" for="patient_type_inpatient">
-                                                <i class="fas fa-bed me-1"></i> مريض راقد (إقامة كاملة)
-                                            </label>
 
-                                            <input type="radio" class="btn-check" name="patient_type" id="patient_type_outpatient" value="outpatient" {{ ($privateWing->patient_type ?? "inpatient") == "outpatient" ? "checked" : "" }} autocomplete="off">
-                                            <label class="btn btn-outline-success fw-bold" for="patient_type_outpatient">
-                                                <i class="fas fa-user-clock me-1"></i> مريض غير راقد (خدمة خارجية / عيادة)
-                                            </label>
-                                        </div>
-                                    </div>
-                                </div>
                                                 <div class="row mb-3">
                                                     <div class="col-md-8">
                                                         <div class="row">
@@ -239,7 +218,7 @@
                                                     <div class="col-md-12">
                                                         <select id="doctor_id" name="doctor_id" class="form-control select2">
                                                             <option value="">اختر الطبيب...</option>
-                                                            @foreach(\App\Models\Doctor::all() as $doctor)
+                                                            @foreach($doctors as $doctor)
                                                                 <option value="{{ $doctor->id }}">{{ $doctor->name }}</option>
                                                             @endforeach
                                                         </select>
@@ -254,9 +233,9 @@
                                                                 <th>الطبيب</th>
                                                                 <th>درجة العملية</th>
                                                                 <th>التكلفة اليومية</th>
-                                                                <th style="text-align: center;">احتساب الأيام</th>
-                                                                <th style="text-align: center;">مشمول بالضمان</th>
-                                                                <th style="text-align: center;">نسبة المريض %</th>
+                                                                <th>احتساب الأيام</th>
+                                                                <th class="insurance-header">مشمول بالضمان</th>
+                                                                <th class="insurance-header">نسبة المريض %</th>
                                                                 <th>الإجمالي</th>
                                                                 <th>مبلغ المريض</th>
                                                                 <th>مبلغ الضمان</th>
@@ -268,8 +247,14 @@
                                                             @php
                                                                 $totalFee = $service->is_daily ? $service->service_fee * $privateWing->days_count : $service->service_fee;
                                                                 $insurancePercentage = $service->insurance_percentage ?? 10;
-                                                                $patientAmount = $service->is_insured ? $totalFee * ($insurancePercentage / 100) : $totalFee;
-                                                                $insuranceAmount = $service->is_insured ? $totalFee * ((100 - $insurancePercentage) / 100) : 0;
+                                                                
+                                                                if ($service->is_insured && $privateWing->is_insured) {
+                                                                    $patientAmount = $totalFee * ($insurancePercentage / 100);
+                                                                    $insuranceAmount = $totalFee * ((100 - $insurancePercentage) / 100);
+                                                                } else {
+                                                                    $patientAmount = $totalFee;
+                                                                    $insuranceAmount = 0;
+                                                                }
                                                             @endphp
                                                             <tr class="existing-service bg-light" data-service-id="{{ $service->id }}">
                                                                 <td>{{ $service->service_name }}</td>
@@ -277,11 +262,11 @@
                                                                 <td>{{ $service->operation_degree ?? '' }}</td>
                                                                 <td>{{ number_format($service->service_fee, 2) }} د.ع</td>
                                                                 <td style="text-align: center;">{{ $service->is_daily ? 'نعم' : 'لا' }}</td>
-                                                                <td style="text-align: center;">{{ $service->is_insured ? 'نعم' : 'لا' }}</td>
-                                                                <td style="text-align: center;">{{ $insurancePercentage }}%</td>
+                                                                <td class="insurance-column" style="text-align: center;">{{ $service->is_insured ? 'نعم' : 'لا' }}</td>
+                                                                <td class="insurance-column" style="text-align: center;">{{ $insurancePercentage }}%</td>
                                                                 <td id="existing-service-total-{{ $service->id }}">{{ number_format($totalFee, 2) }} د.ع</td>
-                                                                <td>{{ number_format($patientAmount, 2) }} د.ع</td>
-                                                                <td>{{ number_format($insuranceAmount, 2) }} د.ع</td>
+                                                                <td id="existing-service-patient-{{ $service->id }}">{{ number_format($patientAmount, 2) }} د.ع</td>
+                                                                <td id="existing-service-insurance-{{ $service->id }}">{{ number_format($insuranceAmount, 2) }} د.ع</td>
                                                                 <td class="text-center">
                                                                     <button type="button" class="btn btn-secondary btn-sm" disabled title="لا يمكن حذف الخدمات الموجودة"><i class="fas fa-trash"></i></button>
                                                                 </td>
@@ -290,7 +275,9 @@
                                                         </tbody>
                                                         <tfoot>
                                                             <tr>
-                                                                <th colspan="7">المجموع</th>
+                                                                <th colspan="5">المجموع</th>
+                                                                <th class="insurance-header"></th>
+                                                                <th class="insurance-header"></th>
                                                                 <th id="total_amount">0 د.ع</th>
                                                                 <th id="total_patient_amount">0 د.ع</th>
                                                                 <th id="total_insurance_amount">0 د.ع</th>
@@ -306,28 +293,13 @@
                             </div>
                         </div>
 
-                        <!-- وصولات التأمين -->
+                        <!-- معلومات التأمينات -->
                         <div class="card mb-4">
-                            <div class="card-header bg-gradient-success text-center">
-                                <h4 class="mb-0"><i class="fas fa-receipt"></i> وصولات التأمين</h4>
+                            <div class="card-header bg-gradient-orange text-center">
+                                <h4 class="mb-0"><i class="fas fa-shield-alt"></i> وصولات التأمينات</h4>
                             </div>
                             <div class="card-body">
-                                <div class="row mb-3 bg-white p-2 rounded border mx-1">
-                                    <div class="col-md-12">
-                                        <label class="form-label fw-bold d-block text-primary"><i class="fas fa-hospital-user me-1"></i> مسار / نوع المريض</label>
-                                        <div class="btn-group w-100" role="group">
-                                            <input type="radio" class="btn-check" name="patient_type" id="patient_type_inpatient" value="inpatient" {{ ($privateWing->patient_type ?? "inpatient") == "inpatient" ? "checked" : "" }} autocomplete="off">
-                                            <label class="btn btn-outline-primary fw-bold" for="patient_type_inpatient">
-                                                <i class="fas fa-bed me-1"></i> مريض راقد (إقامة كاملة)
-                                            </label>
 
-                                            <input type="radio" class="btn-check" name="patient_type" id="patient_type_outpatient" value="outpatient" {{ ($privateWing->patient_type ?? "inpatient") == "outpatient" ? "checked" : "" }} autocomplete="off">
-                                            <label class="btn btn-outline-success fw-bold" for="patient_type_outpatient">
-                                                <i class="fas fa-user-clock me-1"></i> مريض غير راقد (خدمة خارجية / عيادة)
-                                            </label>
-                                        </div>
-                                    </div>
-                                </div>
                                 <div id="receipts-container">
                                     @foreach($privateWing->receipts as $index => $receipt)
                                     <div class="row receipt-row mb-3 existing-receipt" data-receipt-id="{{ $receipt->id }}" data-amount="{{ $receipt->amount }}" data-interest="{{ $receipt->interest_amount }}">
@@ -373,49 +345,65 @@
                                 <h4 class="mb-0"><i class="fas fa-calculator"></i> الإجماليات</h4>
                             </div>
                             <div class="card-body">
-                                <div class="row mb-3 bg-white p-2 rounded border mx-1">
-                                    <div class="col-md-12">
-                                        <label class="form-label fw-bold d-block text-primary"><i class="fas fa-hospital-user me-1"></i> مسار / نوع المريض</label>
-                                        <div class="btn-group w-100" role="group">
-                                            <input type="radio" class="btn-check" name="patient_type" id="patient_type_inpatient" value="inpatient" {{ ($privateWing->patient_type ?? "inpatient") == "inpatient" ? "checked" : "" }} autocomplete="off">
-                                            <label class="btn btn-outline-primary fw-bold" for="patient_type_inpatient">
-                                                <i class="fas fa-bed me-1"></i> مريض راقد (إقامة كاملة)
-                                            </label>
 
-                                            <input type="radio" class="btn-check" name="patient_type" id="patient_type_outpatient" value="outpatient" {{ ($privateWing->patient_type ?? "inpatient") == "outpatient" ? "checked" : "" }} autocomplete="off">
-                                            <label class="btn btn-outline-success fw-bold" for="patient_type_outpatient">
-                                                <i class="fas fa-user-clock me-1"></i> مريض غير راقد (خدمة خارجية / عيادة)
-                                            </label>
+                                <div class="row">
+                                    <div class="col-md-3 mb-3">
+                                        <label class="form-label fw-bold">إجمالي الخدمات المقدمة</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">د.ع</span>
+                                            <input type="text" class="form-control shadow-sm" id="total_services_provided" readonly>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <label class="form-label fw-bold">إجمالي مبلغ المريض</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">د.ع</span>
+                                            <input type="text" class="form-control shadow-sm" id="total_services" readonly>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <label class="form-label fw-bold">إجمالي مبلغ الضمان</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">د.ع</span>
+                                            <input type="text" class="form-control shadow-sm" id="total_insurance_summary" readonly>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="row">
                                     <div class="col-md-3 mb-3">
-                                        <label class="form-label fw-bold">إجمالي الخدمات</label>
-                                        <div class="input-group">
-                                            <span class="input-group-text">د.ع</span>
-                                            <input type="text" class="form-control shadow-sm" id="total_services" value="{{ $privateWing->total_amount ?? 0 }}" readonly>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3 mb-3">
                                         <label class="form-label fw-bold">إجمالي الإيداعات</label>
                                         <div class="input-group">
                                             <span class="input-group-text">د.ع</span>
-                                            <input type="text" class="form-control shadow-sm" id="total_deposits" value="{{ $privateWing->deposit_amount ?? 0 }}" readonly>
+                                            <input type="text" class="form-control shadow-sm" id="total_deposits" readonly>
                                         </div>
                                     </div>
                                     <div class="col-md-3 mb-3">
                                         <label class="form-label fw-bold">إجمالي الفائدة</label>
                                         <div class="input-group">
                                             <span class="input-group-text">د.ع</span>
-                                            <input type="text" class="form-control shadow-sm" id="total_interest" value="0" readonly>
+                                            <input type="text" class="form-control shadow-sm" id="total_interest" readonly>
                                         </div>
                                     </div>
                                     <div class="col-md-3 mb-3">
                                         <label class="form-label fw-bold">المبلغ المتبقي</label>
                                         <div class="input-group">
                                             <span class="input-group-text">د.ع</span>
-                                            <input type="text" class="form-control shadow-sm" id="remaining_amount" value="{{ ($privateWing->deposit_amount ?? 0) - ($privateWing->total_amount ?? 0) }}" readonly>
+                                            <input type="text" class="form-control shadow-sm" id="remaining_amount" readonly>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- حقول الاستثناء -->
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="exception_from" class="form-label fw-bold">استثناء من طرف من</label>
+                                        <input type="text" class="form-control shadow-sm" id="exception_from" name="exception_from" value="{{ $privateWing->exception_from ?? '' }}" placeholder="أدخل طرف الاستثناء">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="exception_percentage" class="form-label fw-bold">نسبة الاستثناء (%)</label>
+                                        <div class="input-group">
+                                            <input type="number" class="form-control shadow-sm" id="exception_percentage" name="exception_percentage" value="{{ $privateWing->exception_percentage ?? '' }}" min="0" max="100" step="0.01" placeholder="أدخل النسبة">
+                                            <span class="input-group-text">%</span>
                                         </div>
                                     </div>
                                 </div>
@@ -436,12 +424,48 @@
 @section('js')
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 <script>
+// متغيرات عامة
+var totalDepositsAmount = 0;
+var totalAmount = 0;
+
+// دالة لحساب الأيام بنظام فنادق
+function calculateDays() {
+    var entryDate = $('#entry_date').val();
+    var exitDate = $('#exit_date').val();
+    var exitTime = $('#exit_time').val() || '00:00';
+
+    if (entryDate && exitDate) {
+        var entry = new Date(entryDate);
+        var exit = new Date(exitDate);
+        var diff = exit - entry;
+        var diffDays = Math.ceil(diff / (1000 * 60 * 60 * 24));
+        if (diffDays < 0) {
+            alert('تاريخ الخروج لا يمكن أن يكون قبل تاريخ الدخول');
+            $('#exit_date').val('');
+            $('#days_count').val(1);
+        } else {
+            var days = diffDays;
+            if (exitTime >= '12:00') days += 1; // خروج بعد الظهر
+            if (days < 1) days = 1;
+            $('#days_count').val(days);
+        }
+    }
+}
+
 $(document).ready(function() {
     // متغير لتتبع الوصولات المحذوفة - لم يعد مطلوباً
     // let deletedReceipts = [];
 
     // متغير لتتبع عدد الوصولات القديمة
     const oldReceiptsCount = {{ $privateWing->receipts->count() }};
+
+    // عند تغيير التواريخ أو الأوقات نعيد حساب الأيام
+    $('#entry_date, #exit_date, #entry_time, #exit_time').change(function() {
+        calculateDays();
+    });
+
+    // إعداد أولي لقيمة الأيام عند فتح النموذج
+    calculateDays();
     
     // إضافة وصل جديد
     $('#add-receipt').click(function() {
@@ -521,7 +545,7 @@ $(document).ready(function() {
     });
 
     // تحديث إجمالي مبلغ التأمينات
-    function updateTotalDeposit() {
+    window.updateTotalDeposit = function() {
         let totalDeposits = 0;  // مجموع مبالغ الوصولات فقط
         let totalInterest = 0;  // مجموع الفائدة فقط
         
@@ -541,16 +565,77 @@ $(document).ready(function() {
             totalInterest += interestAmount;
         });
         
-        totalDepositsAmount = totalDeposits;
-        $('#total_deposits').val(formatNumber(totalDeposits));
-        $('#total_interest').val(formatNumber(totalInterest));
+        // إجمالي الإيداعات = مبلغ الوصل + الفائدة
+        totalDepositsAmount = totalDeposits + totalInterest;
+        $('#total_deposits').val(formatNumber(totalDepositsAmount) + ' د.ع');
+        $('#total_interest').val(formatNumber(totalInterest) + ' د.ع');
         updateRemaining();
     }
 
     // تحديث المبلغ المتبقي
-    function updateRemaining() {
-        const remaining = totalDepositsAmount - totalAmount;
-        $('#remaining_amount').val(formatNumber(remaining));
+    window.updateRemaining = function() {
+        // التحقق من وجود المصفوفات
+        if (typeof window.existingServices === 'undefined') {
+            window.existingServices = [];
+        }
+        if (typeof window.servicesData === 'undefined') {
+            window.servicesData = [];
+        }
+        
+        // حساب مبلغ المريض (بدون الضمان)
+        var isPatientInsured = $('#is_insured').is(':checked');
+        var isOutpatient = $('input[name="patient_type"]:checked').val() === 'outpatient';
+        var daysCount = isOutpatient ? 0 : (parseInt($('#days_count').val()) || 1);
+        var totalPatientAmount = 0;
+        
+        // حساب من الخدمات الموجودة
+        window.existingServices.forEach(function(service) {
+            var serviceTotal = (service.isDaily && !isOutpatient) ? 
+                parseFloat(service.fee) * daysCount : 
+                parseFloat(service.fee);
+            
+            var patientPercentage = service.insurancePercentage || 10;
+            
+            if (service.isInsured && isPatientInsured) {
+                totalPatientAmount += serviceTotal * (patientPercentage / 100);
+            } else {
+                totalPatientAmount += serviceTotal;
+            }
+        });
+        
+        // حساب من الخدمات الجديدة
+        window.servicesData.forEach(function(service) {
+            var serviceTotal = (service.isDaily && !isOutpatient) ? 
+                parseFloat(service.fee) * daysCount : 
+                parseFloat(service.fee);
+            
+            var patientPercentage = service.insurancePercentage || 10;
+            
+            if (service.isInsured && isPatientInsured) {
+                totalPatientAmount += serviceTotal * (patientPercentage / 100);
+            } else {
+                totalPatientAmount += serviceTotal;
+            }
+        });
+        
+        // تطبيق نسبة الاستثناء على مبلغ المريض
+        var exceptionPercentage = parseFloat($('#exception_percentage').val()) || 0;
+        if (exceptionPercentage > 0) {
+            totalPatientAmount = totalPatientAmount * (1 - exceptionPercentage / 100);
+        }
+        
+        // حساب مبلغ الوصولات بدون الفائدة
+        let totalDepositsOnly = 0;
+        $('.existing-receipt').each(function() {
+            totalDepositsOnly += parseFloat($(this).data('amount') || 0);
+        });
+        $('.receipt-row:not(.existing-receipt)').each(function() {
+            totalDepositsOnly += parseFloat($(this).find('input[name*="[amount]"]').val() || 0);
+        });
+        
+        // المعادلة: المبلغ المتبقي = مبلغ الوصولات (بدون فائدة) - مبلغ المريض
+        const remaining = totalDepositsOnly - totalPatientAmount;
+        $('#remaining_amount').val(formatNumber(remaining) + ' د.ع');
     }
 
     // تحديث الإجمالي عند تغيير أي مبلغ
@@ -572,21 +657,157 @@ $(document).ready(function() {
         updateTotalDeposit();
     }
 
-    // تحديث الإجمالي عند تحميل الصفحة
-    updateTotalDeposit();
+    // سيتم استدعاء updateTotalDeposit عند تحميل الصفحة من الدالة الثانية
 });</script>
 <script>
     $(document).ready(function() {
-        // استرجاع البيانات المحفوظة أولاً
-        loadFromLocalStorage();
-        
+        var initialPatientType = '{{ $privateWing->patient_type ?? "inpatient" }}';
+        function toggleTimeAndDaysRow() {
+            var patientType = $('input[name="patient_type"]:checked').val() || initialPatientType;
+            if (patientType === 'outpatient') {
+                $('#time_and_days_row').hide();
+                $('#entry_date').removeAttr('required');
+                if (!$('#entry_date').val()) {
+                    $('#entry_date').val('{{ date("Y-m-d") }}');
+                }
+                $('#days_count').val('0');
+                $('#statistical_number_container').hide();
+                $('#statistical_number').removeAttr('required');
+            } else {
+                $('#time_and_days_row').show();
+                $('#entry_date').attr('required', true);
+                if ($('#days_count').val() == '0') {
+                    $('#days_count').val('1');
+                }
+                $('#statistical_number_container').show();
+                $('#statistical_number').attr('required', true);
+            }
+        }
+
+        $('input[name="patient_type"]').change(toggleTimeAndDaysRow);
+        toggleTimeAndDaysRow();
+
+        // تحميل قائمة التخصص الفرعي دائماً عند التحميل (حتى في صفحة التعديل)
+        function loadSubSpecializations(filterSection) {
+            var data = { _token: '{{ csrf_token() }}' };
+            if (filterSection) data.section_id = filterSection;
+
+            loadSelectDataWithRetry(
+                "{{ route('getSpecializations') }}",
+                '#fckn',
+                {
+                    method: 'POST',
+                    data: data,
+                    defaultText: '--حدد التخصص الفرعي--',
+                    valueField: 'sercode',
+                    textField: 'sername',
+                    retries: 3,
+                    timeout: 10000,
+                    onSuccess: function() {
+                        $('#fckn').prop('disabled', false);
+                    },
+                    onError: function() {
+                        $('#fckn').empty();
+                        $('#fckn').append('<option value="" disabled selected>--حدد التخصص الفرعي--</option>');
+                        $('#fckn').prop('disabled', false);
+                    }
+                }
+            );
+        }
+
+        function isDoctorRequiredService(serviceName) {
+            serviceName = (serviceName || '').trim();
+            if (!serviceName) {
+                return false;
+            }
+
+            var doctorServices = [
+                'اجور عمليات',
+                'اجور زيارات علاجية',
+                'اجورالخدمات الطبية المقدمة للعرب والأجانب غير المقيمين',
+                'العيون',
+                'تمريض وتداوي'
+            ];
+
+            if (doctorServices.includes(serviceName)) {
+                return true;
+            }
+
+            if (/اجور\s+(.*\b)?(الطبيب|المساعد|طبيبة|الطبيبة|الجراح)/i.test(serviceName)) {
+                return true;
+            }
+
+            return false;
+        }
+
+        function toggleDoctorField() {
+            var serviceName = $('#fckr option:selected').text();
+            var required = isDoctorRequiredService(serviceName);
+
+            if (required) {
+                $('#doctor_id').prop('disabled', false);
+                $('#doctor_id').closest('.row').find('label').text('اسم الطبيب (مطلوب)');
+            } else {
+                $('#doctor_id').prop('disabled', false);
+                $('#doctor_id').closest('.row').find('label').text('اسم الطبيب (اختياري)');
+            }
+        }
+
+        $('#fckr').change(toggleDoctorField);
+        $('#fckn').change(toggleDoctorField);
+
+        // سعيد استدعاء التخصصات الفرعية فوراً
+        loadSubSpecializations();
+
+        // تغيير القسم فقط يعيد تهيئة الطبيب، بدون مساس التخصص الفرعي
+        $('#section_id').change(function() {
+            $('#doctor_id').prop('disabled', true).val('').trigger('change');
+            $('#doctor_id').closest('.row').find('label').text('اسم الطبيب');
+        });
+
+        // تغيير التخصص الفرعي يجلب الخدمات المرتبطة به
+        $('#fckn').change(function() {
+            var serviceId = $(this).val();
+            $('#service_fee').val('');
+
+            if (serviceId) {
+                loadSelectDataWithRetry(
+                    "{{ route('getServiceSpecializations') }}",
+                    '#fckr',
+                    {
+                        method: 'POST',
+                        data: {
+                            _token: '{{ csrf_token() }}',
+                            service_id: serviceId
+                        },
+                        defaultText: '--حدد الخدمة--',
+                        valueField: 'id',
+                        textField: 'namesv',
+                        retries: 3,
+                        timeout: 10000,
+                        onSuccess: function() {
+                            toggleDoctorField();
+                        },
+                        onError: function() {
+                            $('#fckr').empty();
+                            $('#fckr').append('<option value="" disabled selected>--حدد الخدمة--</option>');
+                            $('#doctor_id').prop('disabled', true).val('').trigger('change');
+                        }
+                    }
+                );
+            } else {
+                $('#fckr').empty();
+                $('#fckr').append('<option value="" disabled selected>--حدد الخدمة--</option>');
+                $('#doctor_id').prop('disabled', true).val('').trigger('change');
+                $('#doctor_id').closest('.row').find('label').text('اسم الطبيب');
+            }
+        });
+
         // تهيئة المتغيرات العامة
         window.servicesData = [];
-        var totalAmount = 0;
-        var totalDepositsAmount = 0;
 
         // دالة لحفظ البيانات في localStorage
-        function saveToLocalStorage() {
+        window.saveToLocalStorage = function() {
             try {
                 localStorage.setItem('privateWing_edit_services', JSON.stringify(window.servicesData));
                 localStorage.setItem('privateWing_edit_isInsured', $('#is_insured').is(':checked') ? '1' : '0');
@@ -597,16 +818,13 @@ $(document).ready(function() {
         }
 
         // دالة لاسترجاع البيانات من localStorage
-        function loadFromLocalStorage() {
+        window.loadFromLocalStorage = function() {
             try {
                 var savedServices = localStorage.getItem('privateWing_edit_services');
-                var savedIsInsured = localStorage.getItem('privateWing_edit_isInsured');
                 var savedDaysCount = localStorage.getItem('privateWing_edit_daysCount');
                 
-                // استرجاع حالة الضمان
-                if (savedIsInsured) {
-                    $('#is_insured').prop('checked', savedIsInsured === '1');
-                }
+                // ملاحظة: لا نسترجع حالة الضمان من localStorage في صفحة التعديل
+                // لأنها يجب أن تأتي من قاعدة البيانات فقط
                 
                 // استرجاع عدد الأيام
                 if (savedDaysCount) {
@@ -642,7 +860,7 @@ $(document).ready(function() {
         }
 
         // دالة لمسح البيانات المحفوظة
-        function clearLocalStorage() {
+        window.clearLocalStorage = function() {
             localStorage.removeItem('privateWing_edit_services');
             localStorage.removeItem('privateWing_edit_isInsured');
             localStorage.removeItem('privateWing_edit_daysCount');
@@ -650,13 +868,15 @@ $(document).ready(function() {
         }
 
         // دالة لتنسيق الأرقام
-        function formatNumber(number) {
-            return number.toFixed(2);
+        window.formatNumber = function(number) {
+            return number.toLocaleString('ar-IQ', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
         }
 
         // دالة لتحديث المجموع الكلي
-        function updateTotal() {
-            var daysCount = parseInt($('#days_count').val()) || 1;
+        window.updateTotal = function() {
+            var isOutpatient = $('input[name="patient_type"]:checked').val() === 'outpatient';
+            var daysCount = isOutpatient ? 0 : (parseInt($('#days_count').val()) || 1);
+            var isPatientInsured = $('#is_insured').is(':checked');
             
             totalAmount = 0;
             var totalPatientAmount = 0;
@@ -664,7 +884,7 @@ $(document).ready(function() {
             
             // حساب الخدمات الموجودة
             window.existingServices.forEach(function(service) {
-                var serviceTotal = service.isDaily ?
+                var serviceTotal = (service.isDaily && !isOutpatient) ?
                     parseFloat(service.fee) * daysCount :
                     parseFloat(service.fee);
                 
@@ -673,9 +893,11 @@ $(document).ready(function() {
                 // حساب مبالغ الضمان بناءً على النسبة المحددة
                 var patientPercentage = service.insurancePercentage || 10;
                 
-                if (service.isInsured) {
-                    totalPatientAmount += serviceTotal * (patientPercentage / 100);
-                    totalInsuranceAmount += serviceTotal * ((100 - patientPercentage) / 100);
+                if (service.isInsured && isPatientInsured) {
+                    var patientAmount = serviceTotal * (patientPercentage / 100);
+                    var insuranceAmount = serviceTotal * ((100 - patientPercentage) / 100);
+                    totalPatientAmount += patientAmount;
+                    totalInsuranceAmount += insuranceAmount;
                 } else {
                     totalPatientAmount += serviceTotal;
                 }
@@ -692,7 +914,7 @@ $(document).ready(function() {
                 // حساب مبالغ الضمان بناءً على النسبة المحددة
                 var patientPercentage = service.insurancePercentage || 10;
                 
-                if (service.isInsured) {
+                if (service.isInsured && isPatientInsured) {
                     totalPatientAmount += serviceTotal * (patientPercentage / 100);
                     totalInsuranceAmount += serviceTotal * ((100 - patientPercentage) / 100);
                 } else {
@@ -700,36 +922,45 @@ $(document).ready(function() {
                 }
             });
 
-            // تحديث عرض المجموع في الجدول - الإجمالي يعتمد على مبلغ المريض فقط
-            $('#total_amount').text(formatNumber(totalPatientAmount) + ' د.ع');
+            // تطبيق نسبة الاستثناء على مبلغ المريض
+            var exceptionPercentage = parseFloat($('#exception_percentage').val()) || 0;
+            if (exceptionPercentage > 0) {
+                totalPatientAmount = totalPatientAmount * (1 - exceptionPercentage / 100);
+            }
+
+            // تحديث عرض المجموع في الجدول
+            var totalServicesProvided = totalPatientAmount + totalInsuranceAmount;
+            
+            $('#total_amount').text(formatNumber(totalServicesProvided) + ' د.ع');
             $('#total_patient_amount').text(formatNumber(totalPatientAmount) + ' د.ع');
             $('#total_insurance_amount').text(formatNumber(totalInsuranceAmount) + ' د.ع');
-            $('#total_services').val(formatNumber(totalPatientAmount));
+            $('#total_services').val(formatNumber(totalPatientAmount) + ' د.ع');
+            $('#total_services_provided').val(formatNumber(totalServicesProvided) + ' د.ع');
+            $('#total_insurance_summary').val(formatNumber(totalInsuranceAmount) + ' د.ع');
             updateRemaining();
         }
 
         // دالة لإظهار/إخفاء عمود الضمان
-        function toggleInsuranceColumn() {
+        window.toggleInsuranceColumn = function() {
             var isPatientInsured = $('#is_insured').is(':checked');
-            var insuranceHeader = $('#services_table thead th:contains("مشمول بالضمان")');
-            var percentageHeader = $('#services_table thead th:contains("نسبة المريض")');
             
             if (isPatientInsured) {
-                insuranceHeader.show();
-                percentageHeader.show();
+                $('.insurance-header').show();
+                $('.insurance-column').show();
             } else {
-                insuranceHeader.hide();
-                percentageHeader.hide();
+                $('.insurance-header').hide();
+                $('.insurance-column').hide();
             }
         }
 
         // دالة لتحديث جدول الخدمات
-        function updateServicesTable() {
+        window.updateServicesTable = function() {
             var tbody = $('#services_table tbody');
             // حذف الصفوف الجديدة فقط، والاحتفاظ بالصفوف الموجودة
             tbody.find('tr:not(.existing-service)').remove();
 
-            var daysCount = parseInt($('#days_count').val()) || 1;
+            var isOutpatient = $('input[name="patient_type"]:checked').val() === 'outpatient';
+            var daysCount = isOutpatient ? 0 : (parseInt($('#days_count').val()) || 1);
             var isPatientInsured = $('#is_insured').is(':checked');
 
             // تحديث الإجماليات للخدمات الموجودة
@@ -737,16 +968,32 @@ $(document).ready(function() {
                 var serviceId = $(this).data('service-id');
                 var existingService = window.existingServices.find(s => s.id === serviceId);
                 if (existingService) {
-                    var totalForService = existingService.isDaily ?
+                    var totalForService = (existingService.isDaily && !isOutpatient) ?
                         existingService.fee * daysCount :
                         existingService.fee;
+                    
+                    // حساب مبالغ الضمان
+                    var patientAmount = 0;
+                    var insuranceAmount = 0;
+                    var patientPercentage = existingService.insurancePercentage || 10;
+                    
+                    if (existingService.isInsured && isPatientInsured) {
+                        patientAmount = totalForService * (patientPercentage / 100);
+                        insuranceAmount = totalForService * ((100 - patientPercentage) / 100);
+                    } else {
+                        patientAmount = totalForService;
+                        insuranceAmount = 0;
+                    }
+                    
                     $('#existing-service-total-' + serviceId).text(formatNumber(totalForService) + ' د.ع');
+                    $('#existing-service-patient-' + serviceId).text(formatNumber(patientAmount) + ' د.ع');
+                    $('#existing-service-insurance-' + serviceId).text(formatNumber(insuranceAmount) + ' د.ع');
                 }
             });
 
             // إضافة الخدمات الجديدة
             window.servicesData.forEach((service, index) => {
-                var totalFee = service.isDaily ? service.fee * daysCount : service.fee;
+                var totalFee = (service.isDaily && !isOutpatient) ? service.fee * daysCount : service.fee;
                 
                 // حساب مبالغ الضمان بناءً على النسبة
                 var patientAmount = 0;
@@ -822,67 +1069,7 @@ $(document).ready(function() {
             toggleInsuranceColumn();
         }
 
-        // معالجة تغيير التخصص
-        $('#section_id').change(function() {
-            var section_id = $(this).val();
-            if (section_id) {
-                $.ajax({
-                    url: "{{ route('getSpecializations') }}",
-                    type: "POST",
-                    data: {
-                        _token: '{{ csrf_token() }}',
-                        section_id: section_id
-                    },
-                    success: function(data) {
-                        $('#fckn').empty();
-                        $('#fckn').append('<option value="" disabled selected>--حدد التخصص الفرعي--</option>');
-                        $.each(data, function(key, value) {
-                            $('#fckn').append('<option value="' + value.sercode + '">' + value.sername + '</option>');
-                        });
-                        $('#service_fee').val('');
-                    },
-                    error: function() {
-                        alert('حدث خطأ أثناء جلب البيانات.');
-                    }
-                });
-            } else {
-                $('#fckn').empty();
-                $('#fckn').append('<option value="" disabled selected>--حدد التخصص الفرعي--</option>');
-                $('#service_fee').val('');
-            }
-        });
 
-        // معالجة تغيير التخصص الفرعي
-        $('#section_id, #fckn').change(function() {
-            var section_id = $('#section_id').val();
-            var fckn = $('#fckn').val();
-            $('#service_fee').val('');
-
-            if (section_id && fckn) {
-                $.ajax({
-                    url: "{{ route('getInstitutions') }}",
-                    type: "POST",
-                    data: {
-                        _token: '{{ csrf_token() }}',
-                        section_id: section_id,
-                        fckn: fckn
-                    },
-                    success: function(data) {
-                        $('#fckr').empty();
-                        $('#fckr').append('<option value="" disabled selected>--حدد الخدمة--</option>');
-                        $.each(data, function(key, value) {
-                            $('#fckr').append('<option value="' + value.id + '">' + value.namesv + '</option>');
-                        });
-                    },
-                    error: function() {
-                        alert('حدث خطأ أثناء جلب البيانات.');
-                    }
-                });
-            } else {
-                $('#fckr').empty();
-                $('#fckr').append('<option value="" disabled selected>--حدد الخدمة--</option>');
-            }
-        });
 
         // معالجة تغيير الخدمة
         $('#fckr').change(function() {
@@ -927,6 +1114,18 @@ $(document).ready(function() {
             if (!serviceId || !serviceName || isNaN(serviceFee) || serviceFee <= 0) {
                 alert('الرجاء اختيار الخدمة وتحديد سعر صحيح أكبر من صفر');
                 return;
+            }
+
+            var required = isDoctorRequiredService(serviceName);
+
+            if (required && !doctorId) {
+                alert('الرجاء اختيار الطبيب لهذا التخصص');
+                return;
+            }
+
+            if (!required) {
+                doctorId = null;
+                doctorName = '';
             }
 
             // تحديد القيمة الافتراضية لاحتساب الأيام
@@ -1027,6 +1226,11 @@ $(document).ready(function() {
             saveToLocalStorage();
         });
 
+        // معالجة تغيير نسبة الاستثناء
+        $('#exception_percentage').on('input change', function() {
+            updateTotal();
+        });
+
         // معالجة حدث النقر على زر الحذف
         $(document).on('click', '.delete-service', function() {
             var index = $(this).data('index');
@@ -1046,49 +1250,101 @@ $(document).ready(function() {
                 return;
             }
             
-            // إضافة بيانات الخدمات الجديدة فقط إلى النموذج
-            window.servicesData.forEach((service, index) => {
+            var formElement = this;
+            var serviceIndex = 0;
+            
+            // إضافة بيانات الخدمات الموجودة أولاً
+            window.existingServices.forEach((service) => {
                 $('<input>').attr({
                     type: 'hidden',
-                    name: `services[${index}][id]`,
-                    value: service.id
-                }).appendTo(this);
+                    name: `services[${serviceIndex}][id]`,
+                    value: service.service_id
+                }).appendTo(formElement);
                 
                 $('<input>').attr({
                     type: 'hidden',
-                    name: `services[${index}][fee]`,
+                    name: `services[${serviceIndex}][fee]`,
                     value: service.fee
-                }).appendTo(this);
+                }).appendTo(formElement);
                 
                 $('<input>').attr({
                     type: 'hidden',
-                    name: `services[${index}][is_daily]`,
+                    name: `services[${serviceIndex}][is_daily]`,
                     value: service.isDaily ? '1' : '0'
-                }).appendTo(this);
+                }).appendTo(formElement);
 
                 $('<input>').attr({
                     type: 'hidden',
-                    name: `services[${index}][is_insured]`,
+                    name: `services[${serviceIndex}][is_insured]`,
                     value: service.isInsured ? '1' : '0'
-                }).appendTo(this);
+                }).appendTo(formElement);
 
                 $('<input>').attr({
                     type: 'hidden',
-                    name: `services[${index}][insurance_percentage]`,
+                    name: `services[${serviceIndex}][insurance_percentage]`,
                     value: service.insurancePercentage || 10
-                }).appendTo(this);
+                }).appendTo(formElement);
 
                 $('<input>').attr({
                     type: 'hidden',
-                    name: `services[${index}][doctor_id]`,
+                    name: `services[${serviceIndex}][doctor_id]`,
                     value: service.doctor_id || ''
-                }).appendTo(this);
+                }).appendTo(formElement);
 
                 $('<input>').attr({
                     type: 'hidden',
-                    name: `services[${index}][operation_degree]`,
+                    name: `services[${serviceIndex}][operation_degree]`,
                     value: service.operation_degree || ''
-                }).appendTo(this);
+                }).appendTo(formElement);
+                
+                serviceIndex++;
+            });
+            
+            // إضافة بيانات الخدمات الجديدة
+            window.servicesData.forEach((service) => {
+                $('<input>').attr({
+                    type: 'hidden',
+                    name: `services[${serviceIndex}][id]`,
+                    value: service.id
+                }).appendTo(formElement);
+                
+                $('<input>').attr({
+                    type: 'hidden',
+                    name: `services[${serviceIndex}][fee]`,
+                    value: service.fee
+                }).appendTo(formElement);
+                
+                $('<input>').attr({
+                    type: 'hidden',
+                    name: `services[${serviceIndex}][is_daily]`,
+                    value: service.isDaily ? '1' : '0'
+                }).appendTo(formElement);
+
+                $('<input>').attr({
+                    type: 'hidden',
+                    name: `services[${serviceIndex}][is_insured]`,
+                    value: service.isInsured ? '1' : '0'
+                }).appendTo(formElement);
+
+                $('<input>').attr({
+                    type: 'hidden',
+                    name: `services[${serviceIndex}][insurance_percentage]`,
+                    value: service.insurancePercentage || 10
+                }).appendTo(formElement);
+
+                $('<input>').attr({
+                    type: 'hidden',
+                    name: `services[${serviceIndex}][doctor_id]`,
+                    value: service.doctor_id || ''
+                }).appendTo(formElement);
+
+                $('<input>').attr({
+                    type: 'hidden',
+                    name: `services[${serviceIndex}][operation_degree]`,
+                    value: service.operation_degree || ''
+                }).appendTo(formElement);
+                
+                serviceIndex++;
             });
             
             // مسح البيانات المحفوظة قبل الإرسال
@@ -1103,6 +1359,7 @@ $(document).ready(function() {
             @foreach($services as $service)
                 window.existingServices.push({
                     id: {{ $service->id }},
+                    service_id: {{ $service->service_id }},
                     name: {!! json_encode($service->service_name) !!},
                     doctor_id: {{ $service->doctor_id ?? 'null' }},
                     doctor_name: {!! json_encode($service->doctor_name ?? '') !!},
@@ -1113,15 +1370,17 @@ $(document).ready(function() {
                     insurancePercentage: {{ $service->insurance_percentage ?? 10 }}
                 });
             @endforeach
-            console.log('Loaded existing services:', window.existingServices);
-        @else
-            console.log('No existing services to load');
         @endif
         
+        // استرجاع البيانات المحفوظة (إن وجدت)
+        loadFromLocalStorage();
+        
+        // تحديث الجداول والحسابات
         updateServicesTable();
         updateTotal();
         updateTotalDeposit();
         updateRemaining();
+        toggleInsuranceColumn();
     });
 </script>
 @endsection

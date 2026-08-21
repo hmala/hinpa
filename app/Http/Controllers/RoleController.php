@@ -27,9 +27,9 @@ $this->middleware('permission:أدارة المستخدمين', ['only' => ['des
 */
 public function index(Request $request)
 {
-$roles = Role::orderBy('id','DESC')->paginate(5);
+$roles = Role::orderBy('id','DESC')->paginate(15);
 return view('roles.index',compact('roles'))
-->with('i', ($request->input('page', 1) - 1) * 5);
+->with('i', ($request->input('page', 1) - 1) * 15);
 }
 /**
 * Show the form for creating a new resource.

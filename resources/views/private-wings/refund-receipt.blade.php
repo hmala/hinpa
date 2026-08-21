@@ -2,17 +2,15 @@
 @section('title', 'وصل استرداد')
 @section('css')
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap');
     
     body {
-        background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-        font-family: 'Cairo', 'Arial', sans-serif;
-        min-height: 100vh;
-        padding: 20px 0;
+        background-color: #e9ecef;
+        font-family: 'Amiri', 'Arial', sans-serif;
     }
     
     * {
-        font-family: 'Cairo', 'Arial', sans-serif !important;
+        font-family: 'Amiri', 'Arial', sans-serif !important;
         box-sizing: border-box;
     }
     
@@ -20,249 +18,232 @@
         width: 148mm;
         min-height: 210mm;
         margin: 20px auto;
-        background: linear-gradient(to bottom, #ffffff 0%, #f8f9fa 100%);
+        background: #ffffff;
         padding: 10mm 15mm;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        box-shadow: 0 0 15px rgba(0,0,0,0.2);
         position: relative;
-        border-radius: 8px;
-        border: 3px solid #bdc3c7;
-    }
-    
-    /* شريط علوي رسمي */
-    .receipt-container::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 6px;
-        background: linear-gradient(90deg, #2c3e50, #34495e, #2c3e50);
-        border-radius: 8px 8px 0 0;
     }
     
     /* رقم الوصل في الأعلى */
     .receipt-number-top {
         position: absolute;
-        top: 12mm;
-        left: 15mm;
-        font-size: 28px;
-        font-weight: 700;
-        color: #1a252f;
-        letter-spacing: 1px;
+        top: 20mm;
+        left: 25mm;
+        font-size: 32px;
+        font-weight: bold;
+        color: #000;
+        letter-spacing: 2px;
+    }
+    
+    /* شعار الوزارة */
+    .ministry-header {
+        position: absolute;
+        top: 15mm;
+        right: 20mm;
+        text-align: right;
+        line-height: 1.3;
+    }
+    
+    .ministry-header p {
+        margin: 2px 0;
+        font-size: 13px;
+        color: #000;
     }
     
     /* الترويسة */
     .receipt-header {
         text-align: center;
-        margin-top: 20mm;
-        margin-bottom: 12mm;
-        padding: 15px;
-        background: linear-gradient(135deg, #ecf0f115 0%, #bdc3c715 100%);
-        border-radius: 10px;
-        border-right: 4px solid #2c3e50;
-        border-left: 4px solid #34495e;
+        margin-top: 25mm;
+        margin-bottom: 15mm;
+        border-bottom: 2px solid #000;
+        padding-bottom: 10px;
     }
     
     .receipt-header h1 {
-        font-size: 17px;
-        color: #2c3e50;
-        margin: 3px 0;
+        font-size: 18px;
+        color: #000;
+        margin: 4px 0;
         font-weight: 700;
-        text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
     }
     
     .receipt-header h2 {
-        font-size: 15px;
-        color: #34495e;
-        margin: 2px 0;
-        font-weight: 500;
+        font-size: 16px;
+        color: #000;
+        margin: 3px 0;
+        font-weight: 400;
     }
     
     /* عنوان الوصل */
     .receipt-title {
         text-align: center;
-        font-size: 17px;
-        font-weight: 700;
-        margin: 18px 0;
-        padding: 12px;
-        color: #fff;
-        background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-        border-radius: 8px;
-        box-shadow: 0 4px 15px rgba(44, 62, 80, 0.4);
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
+        font-size: 18px;
+        font-weight: bold;
+        margin: 20px 0;
+        padding: 8px;
+        color: #000;
+        text-decoration: underline;
+        text-underline-offset: 5px;
     }
     
     /* التاريخ */
     .receipt-date {
         text-align: center;
-        font-size: 14px;
-        margin-bottom: 20px;
+        font-size: 16px;
+        margin-bottom: 25px;
         direction: rtl;
-        color: #7f8c8d;
-        font-weight: 600;
-        background: #ecf0f1;
-        display: inline-block;
-        padding: 6px 20px;
-        border-radius: 20px;
-        margin-left: 50%;
-        transform: translateX(-50%);
     }
     
     /* محتوى الوصل */
     .receipt-body {
-        margin: 25px 0;
-        line-height: 2.3;
-        font-size: 15px;
+        margin: 30px 0;
+        line-height: 2.2;
+        font-size: 17px;
         text-align: right;
         direction: rtl;
-        background: #fff;
-        padding: 20px;
-        border-radius: 10px;
-        border: 2px solid #e8e8e8;
+        text-align: justify;
+    }
+    
+    .receipt-text {
+        margin: 0;
+        padding: 0;
+        display: inline;
+        text-align: justify;
     }
     
     .receipt-paragraph {
-        margin: 12px 0;
+        margin: 15px 0;
         text-align: justify;
-        line-height: 2.4;
-        color: #2c3e50;
+        line-height: 2.5;
     }
     
     .inline-field {
         display: inline;
-        border-bottom: 2px dotted #34495e;
-        padding: 0 12px;
-        min-width: 100px;
+        border-bottom: 1px solid #000;
+        padding: 0 15px;
+        min-width: 120px;
         text-align: center;
-        font-weight: 700;
-        color: #2c3e50;
-        background: #ecf0f1;
+        font-weight: bold;
     }
     
     .long-field {
         display: inline;
-        border-bottom: 2px dotted #7f8c8d;
-        padding: 0 12px;
-        min-width: 200px;
+        border-bottom: 1px solid #000;
+        padding: 0 15px;
+        min-width: 250px;
         text-align: center;
-        font-weight: 600;
-        color: #34495e;
-        background: #ecf0f1;
+        font-weight: normal;
     }
     
     /* منطقة التوقيعات */
     .signatures-area {
-        margin-top: 40mm;
+        margin-top: 60mm;
         position: relative;
-        background: #f8f9fa;
-        padding: 20px;
-        border-radius: 10px;
-        border: 2px solid #e8e8e8;
     }
     
     .signature-grid {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
-        gap: 20px;
+        gap: 30px;
         text-align: center;
         direction: rtl;
     }
     
     .signature-item {
         text-align: center;
-        background: #fff;
-        padding: 15px;
-        border-radius: 8px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-        transition: transform 0.3s;
-    }
-    
-    .signature-item:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 4px 15px rgba(44, 62, 80, 0.2);
     }
     
     .signature-title {
-        font-size: 13px;
-        margin-bottom: 5px;
-        color: #2c3e50;
-        font-weight: 700;
+        font-size: 14px;
+        margin-bottom: 3px;
+        color: #000;
     }
     
     .signature-name {
-        font-size: 13px;
-        margin: 5px 0;
-        min-height: 40px;
-        color: #2c3e50;
-        font-weight: 600;
+        font-size: 14px;
+        margin: 3px 0;
+        min-height: 50px;
+        color: #000;
     }
     
     .signature-line-text {
-        font-size: 12px;
-        color: #7f8c8d;
-        padding-top: 8px;
-        border-top: 2px solid #2c3e50;
-        margin-top: 5px;
-        font-weight: 600;
+        font-size: 13px;
+        color: #000;
+        padding-top: 5px;
+        border-top: 1px solid #000;
+        margin-top: 3px;
     }
     
     /* منطقة الختم */
     .stamp-box {
         position: absolute;
-        bottom: 35mm;
-        right: 25mm;
-        width: 70px;
-        height: 70px;
-        border: 2px dashed #e74c3c;
+        bottom: 50mm;
+        right: 40mm;
+        width: 80px;
+        height: 80px;
+        border: 1.5px dashed #aaa;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 10px;
-        color: #e74c3c;
+        font-size: 11px;
+        color: #999;
         transform: rotate(-15deg);
-        background: 25px;
+    }
+    
+    /* التذييل */
+    .footer-text {
+        position: absolute;
+        bottom: 10mm;
+        left: 20mm;
+        right: 20mm;
+        font-size: 10px;
+        text-align: center;
+        color: #555;
+        border-top: 0.5px solid #ccc;
+        padding-top: 8px;
+    }
+    
+    /* أزرار التحكم */
+    .control-buttons {
+        margin-top: 30px;
         text-align: center;
     }
     
     .btn-print {
         padding: 12px 35px;
-        background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+        background-color: #007bff;
         color: #fff;
         border: none;
-        border-radius: 25px;
+        border-radius: 6px;
         cursor: pointer;
-        font-size: 15px;
+        font-size: 16px;
         margin: 0 5px;
         transition: all 0.3s;
-        box-shadow: 0 4px 15px rgba(44, 62, 80, 0.4);
-        font-weight: 600;
     }
     
     .btn-print:hover {
+        background-color: #0056b3;
         transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(44, 62, 80, 0.6);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
     }
     
     .btn-back {
         padding: 12px 35px;
-        background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+        background-color: #6c757d;
         color: #fff;
         border: none;
-        border-radius: 25px;
+        border-radius: 6px;
         text-decoration: none;
         display: inline-block;
-        font-size: 15px;
+        font-size: 16px;
         margin: 0 5px;
         transition: all 0.3s;
-        box-shadow: 0 4px 15px rgba(127, 140, 141, 0.3);
-        font-weight: 600;
     }
     
     .btn-back:hover {
+        background-color: #545b62;
         transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(127, 140, 141, 0.5);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
         color: #fff;
     }
     
@@ -276,14 +257,12 @@
             margin: 0;
         }
         
-        body {
-            background: white !important;
-        }
-        
+        /* إخفاء كل محتويات الصفحة */
         body * {
             visibility: hidden;
         }
         
+        /* إظهار الوصل فقط */
         .receipt-container,
         .receipt-container * {
             visibility: visible;
@@ -307,106 +286,15 @@
             padding: 15mm 20mm;
             box-shadow: none;
             page-break-after: avoid;
-            border: none;
-            border-radius: 0;
-            background: white !important;
-        }
-        
-        .receipt-container::before {
-            display: none;
-        }
-        
-        /* تكبير المحتوى للطباعة */
-        .receipt-number-top {
-            font-size: 32px !important;
-            top: 15mm !important;
-            left: 20mm !important;
-        }
-        
-        .receipt-header {
-            margin-top: 25mm !important;
-            margin-bottom: 15mm !important;
-        }
-        
-        .receipt-header h1 {
-            font-size: 20px !important;
-        }
-        
-        .receipt-header h2 {
-            font-size: 18px !important;
-        }
-        
-        .receipt-title {
-            font-size: 20px !important;
-            padding: 15px !important;
-            margin: 20px 0 !important;
-        }
-        
-        .receipt-date {
-            font-size: 16px !important;
-            margin-bottom: 25px !important;
-        }
-        
-        .receipt-body {
-            font-size: 17px !important;
-            line-height: 2.5 !important;
-            padding: 25px !important;
-        }
-        
-        .receipt-paragraph {
-            margin: 18px 0 !important;
-            line-height: 2.6 !important;
-        }
-        
-        .inline-field {
-            font-size: 16px !important;
-            padding: 0 15px !important;
-        }
-        
-        .long-field {
-            font-size: 16px !important;
-            padding: 0 15px !important;
-        }
-        
-        .signatures-area {
-            margin-top: 50mm !important;
-            padding: 25px !important;
-        }
-        
-        .signature-item {
-            padding: 20px !important;
-        }
-        
-        .signature-title {
-            font-size: 15px !important;
-        }
-        
-        .signature-name {
-            font-size: 15px !important;
-            min-height: 60px !important;
-        }
-        
-        .signature-line-text {
-            font-size: 14px !important;
-        }
-        
-        .stamp-box {
-            width: 90px !important;
-            height: 90px !important;
-            bottom: 40mm !important;
-            right: 30mm !important;
-            border-color: #ccc !important;
-            color: #999 !important;
-            box-shadow: none !important;
-        }
-        
-        .footer-text {
-            font-size: 11px !important;
-            bottom: 12mm !important;
         }
         
         .no-print {
             display: none !important;
+        }
+        
+        .stamp-box {
+            border-color: transparent;
+            color: transparent;
         }
         
         * {

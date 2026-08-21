@@ -13,17 +13,17 @@ $(function(e) {
 	table.buttons().container()
 	.appendTo( '#example_wrapper .col-md-6:eq(0)' );		
 	
-	// $('#example1').DataTable({
-	// 	responsive: true,
-	// 	scrollX: true,
-	// 	autoWidth: false,
-	// 	pageLength: 10,
-	// 	language: {
-	// 		searchPlaceholder: 'Search...',
-	// 		sSearch: '',
-	// 		lengthMenu: '_MENU_',
-	// 	}
-	// });
+	$('#example1').DataTable({
+		responsive: true,
+		scrollX: true,
+		autoWidth: false,
+		pageLength: 10,
+		language: {
+			searchPlaceholder: 'بحث...',
+			sSearch: '',
+			lengthMenu: '_MENU_',
+		}
+	});
 	$('#example2').DataTable({
 		responsive: true,
 		language: {

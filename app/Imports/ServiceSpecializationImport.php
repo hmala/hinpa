@@ -30,9 +30,32 @@ class ServiceSpecializationImport implements ToModel, WithHeadingRow, WithBatchI
                 return null;
             }
 
-            // البحث عن الخدمة أو إنشاؤها إذا لم تكن موجودة
-            $service = Service::firstOrCreate(                ['id' => trim($row['service_id'])]
-            );
+            // البحث عن الخدمة؛ حاول إيجاد الخدمة أولاً بالـ id ثم بـ sercode
+            $serviceId = trim($row['service_id']);
+            $service = Service::find($serviceId);
+
+            if (!$service) {
+                // محاولة البحث بواسطة sercode إن وُجد
+                if (!empty($row['sercode'])) {
+                    $service = Service::where('sercode', trim($row['sercode']))->first();
+                }
+            }
+
+            // إذا لم توجد الخدمة بعد ذلك، وإذا كانت البيانات كافية فأنشئها
+            if (!$service) {
+                if (!empty($row['sercode']) && !empty($row['sername'])) {
+                    $service = Service::create([
+                        'sercode' => trim($row['sercode']),
+                        'sername' => trim($row['sername']),
+                        'type_specializations_id' => !empty($row['type_specializations_id']) ? trim($row['type_specializations_id']) : null
+                    ]);
+                    Log::info('تم إنشاء خدمة جديدة أثناء الاستيراد:', ['service_id' => $service->id, 'sercode' => $service->sercode]);
+                } else {
+                    // إذا لم تتوفر بيانات كافية لإنشاء الخدمة فنتجاهل الصف مع تسجيل تحذير
+                    Log::warning('خدمة غير موجودة ولم تتوفر بيانات كافية للإنشاء، تم تجاهل الصف: ' . json_encode($row));
+                    return null;
+                }
+            }
 
             // البحث عن التخصص أو إنشاؤه إذا لم يكن موجوداً
             $specialization = TypeSpecialization::firstOrCreate(                ['id' => trim($row['type_specializations_id'])]

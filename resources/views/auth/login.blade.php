@@ -75,8 +75,12 @@
     .buttons-container {
         display: flex;
         justify-content: center; /* لمحاذاة الأزرار في المنتصف */
-        gap: 10px; /* إضافة مسافة بين الأزرار */
         margin-top: 20px; /* مسافة أعلى */
+    }
+    
+    .buttons-container .btn {
+        width: 100%; /* زر بعرض كامل */
+        max-width: 300px; /* حد أقصى للعرض */
     }
 </style>
 @endsection
@@ -127,9 +131,6 @@
                                                 <button type="submit" class="btn btn-main-primary">
                                                     <i class="fas fa-sign-in-alt"></i> تسجيل الدخول
                                                 </button>
-                                                <a href="{{ route('register') }}" class="btn btn-main-primary">
-                                                    <i class="fas fa-user-plus"></i> مستخدم جديد
-                                                </a>
                                             </div>
                                         </form>
                                     </div>

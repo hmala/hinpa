@@ -5,8 +5,10 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\mohs;
 use App\Models\fck;
+use App\Models\Fctypes;
 use App\Exports\UsersExport;
 use Maatwebsite\Excel\Facades\Excel;
+use PragmaRX\Google2FA\Google2FA;
 
 use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Log;
@@ -69,8 +71,10 @@ public function index(Request $request)
 */
 public function create()
 {
-$roles = Role::pluck('name','name')->all();
-return view('users.Add_user',compact('roles'));
+    $roles = Role::pluck('name','name')->all();
+    $mohs = mohs::all();
+    $fctypes = Fctypes::all();
+    return view('users.Add_user', compact('roles', 'mohs', 'fctypes'));
 }
 /**
 * Store a newly created resource in storage.
@@ -85,12 +89,19 @@ public function store(Request $request)
         'name' => 'required',
         'email' => 'required|email|unique:users,email',
         'password' => 'required|same:confirm-password',
-        'roles_name' => 'required'
+        'roles_name' => 'required',
+        'mohcode' => 'required|exists:mohs,id',
+        'fckid' => 'required|exists:fcks,id',
+        'fcktid' => 'required|exists:fctypes,id',
+        'Status' => 'required|in:مفعل,غير مفعل'
     ]);
 
-    // تخزين البيانات وتشفير كلمة المرور
     $input = $request->all();
     $input['password'] = Hash::make($input['password']);
+
+    // توليد كود المصادقة الثنائية
+    $google2fa = new Google2FA();
+    $input['google2fa_secret'] = $google2fa->generateSecretKey();
 
     // إنشاء المستخدم الجديد
     $user = User::create($input);
@@ -100,7 +111,7 @@ public function store(Request $request)
 
     // إعادة التوجيه مع رسالة نجاح
     return redirect()->route('users.index')
-        ->with('success', 'User created successfully');
+        ->with('success', 'تم إضافة المستخدم بنجاح');
 }
 
 /**

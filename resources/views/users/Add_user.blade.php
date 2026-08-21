@@ -2,6 +2,7 @@
 @section('css')
 <!-- Internal Nice-select css  -->
 <link href="{{URL::asset('assets/plugins/jquery-nice-select/css/nice-select.css')}}" rel="stylesheet" />
+<link href="{{ URL::asset('assets/plugins/select2/css/select2.min.css') }}" rel="stylesheet">
 @section('title')
 اضافة مستخدم - مورا سوفت للادارة القانونية
 @stop
@@ -84,6 +85,37 @@
                         </div>
                     </div>
 
+                    <div class="row mg-b-20">
+                        <div class="parsley-input col-md-6">
+                            <label>الدائرة الصحية: <span class="tx-danger">*</span></label>
+                            <select name="mohcode" id="section_id" class="form-control select2" required>
+                                <option value="">اختر الدائرة</option>
+                                @foreach($mohs as $moh)
+                                    <option value="{{ $moh->id }}">{{ $moh->mohname }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="parsley-input col-md-6">
+                            <label>نوع المؤسسة: <span class="tx-danger">*</span></label>
+                            <select name="fcktid" id="fckt" class="form-control select2" required>
+                                <option value="">اختر النوع</option>
+                                @foreach($fctypes as $fctype)
+                                    <option value="{{ $fctype->id }}">{{ $fctype->Fname }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row mg-b-20">
+                        <div class="parsley-input col-md-6">
+                            <label>المؤسسة: <span class="tx-danger">*</span></label>
+                            <select name="fckid" id="fckn" class="form-control select2" required>
+                                <option value="">اختر المؤسسة</option>
+                            </select>
+                        </div>
+                    </div>
+
                     <div class="row row-sm mg-b-20">
                         <div class="col-lg-6">
                             <label class="form-label">حالة المستخدم</label>
@@ -118,6 +150,7 @@
 @endsection
 @section('js')
 
+<script src="{{ URL::asset('assets/plugins/select2/js/select2.min.js') }}"></script>
 
 <!-- Internal Nice-select js-->
 <script src="{{URL::asset('assets/plugins/jquery-nice-select/js/jquery.nice-select.js')}}"></script>
@@ -127,4 +160,60 @@
 <script src="{{URL::asset('assets/plugins/parsleyjs/parsley.min.js')}}"></script>
 <!-- Internal Form-validation js -->
 <script src="{{URL::asset('assets/js/form-validation.js')}}"></script>
+
+<script>
+    $(document).ready(function() {
+        $('.select2').select2();
+
+        // عند تغيير الدائرة أو نوع المؤسسة، تحديث قائمة المؤسسات
+        $('#section_id, #fckt').change(function() {
+            var section_id = $('#section_id').val();
+            var fckt = $('#fckt').val();
+
+            if (section_id && fckt) {
+                $.ajax({
+                    url: '{{ route("getInstitutions") }}',
+                    type: 'POST',
+                    data: {
+                        _token: '{{ csrf_token() }}',
+                        moh_id: section_id,
+                        fckt: fckt
+                    },
+                    success: function(data) {
+                        console.log('Success response:', data);
+                        $('#fckn').empty();
+                        $('#fckn').append('<option value="">--حدد المؤسسة--</option>');
+                        if (data && data.length > 0) {
+                            $.each(data, function(key, value) {
+                                $('#fckn').append('<option value="' + value.id + '">' + value.Fckname + '</option>');
+                            });
+                        } else {
+                            $('#fckn').append('<option value="">لا توجد مؤسسات متاحة</option>');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('AJAX Error:', {
+                            status: xhr.status,
+                            statusText: xhr.statusText,
+                            responseText: xhr.responseText,
+                            error: error
+                        });
+                        
+                        let errorMessage = 'حدث خطأ أثناء جلب البيانات.';
+                        if (xhr.responseJSON && xhr.responseJSON.error) {
+                            errorMessage += ' التفاصيل: ' + xhr.responseJSON.error;
+                        }
+                        alert(errorMessage);
+                        
+                        $('#fckn').empty();
+                        $('#fckn').append('<option value="">--خطأ في تحميل البيانات--</option>');
+                    }
+                });
+            } else {
+                $('#fckn').empty();
+                $('#fckn').append('<option value="">--حدد المؤسسة--</option>');
+            }
+        });
+    });
+</script>
 @endsection

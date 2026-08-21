@@ -135,8 +135,6 @@
                 <tr>
                     <th>الرقم الإحصائي</th>
                     <td>{{ $privateWing->statistical_number }}</td>
-                    <th>رقم الطبلة</th>
-                    <td>{{ $privateWing->table_number }}</td>
                 </tr>
             </table>
         </div>
@@ -152,6 +150,11 @@
                         <th>الأجور</th>
                         <th>الأيام</th>
                         <th>الإجمالي</th>
+                        @if($privateWing->is_insured)
+                            <th>الضمان (%)</th>
+                            <th>مبلغ المريض</th>
+                            <th>مبلغ الضمان</th>
+                        @endif
                     </tr>
                 </thead>
                 <tbody>
@@ -163,6 +166,11 @@
                         <td>{{ number_format($service->service_fee, 0) }}</td>
                         <td>{{ $service->is_daily ? 'نعم' : 'لا' }}</td>
                         <td>{{ number_format($service->total_amount, 0) }}</td>
+                        @if($privateWing->is_insured)
+                            <td>{{ $service->is_insured ? ($service->insurance_percentage ?? 10) : '-' }}</td>
+                            <td>{{ number_format($service->patient_amount ?? $service->total_amount, 0) }}</td>
+                            <td>{{ number_format($service->insurance_amount ?? 0, 0) }}</td>
+                        @endif
                     </tr>
                     @endforeach
                 </tbody>
@@ -186,9 +194,19 @@
                 </tr>
                 <tr>
                     <th>تاريخ الدخول</th>
-                    <td>{{ $privateWing->entry_date ? $privateWing->entry_date->format('Y-m-d') : '' }}</td>
+                    <td>
+                        {{ $privateWing->entry_date ? $privateWing->entry_date->format('Y-m-d') : '' }}
+                        @if($privateWing->entry_time)
+                            <br><small>{{ $privateWing->entry_time }}</small>
+                        @endif
+                    </td>
                     <th>تاريخ الخروج</th>
-                    <td>{{ $privateWing->exit_date ? $privateWing->exit_date->format('Y-m-d') : '' }}</td>
+                    <td>
+                        {{ $privateWing->exit_date ? $privateWing->exit_date->format('Y-m-d') : '' }}
+                        @if($privateWing->exit_time)
+                            <br><small>{{ $privateWing->exit_time }}</small>
+                        @endif
+                    </td>
                 </tr>
             </table>
         </div>
@@ -224,15 +242,47 @@
         </div>
 
         <div class="invoice-section">
-            <h3>إجمالي المبلغ</h3>
+            <h3>ملخص الحساب</h3>
             <table class="invoice-table">
                 <tr>
-                    <th>المبلغ الإجمالي</th>
+                    <th>إجمالي الخدمات (الكلي)</th>
                     <td class="text-right"><strong>{{ number_format($privateWing->total_amount, 0) }} د.ع</strong></td>
+                </tr>
+                @if($privateWing->is_insured)
+                    @php
+                        $totalPatient = $services->sum('patient_amount');
+                        $totalInsurance = $services->sum('insurance_amount');
+                    @endphp
+                    <tr>
+                        <th>مبلغ المريض</th>
+                        <td class="text-right"><strong>{{ number_format($totalPatient > 0 ? $totalPatient : $privateWing->total_amount, 0) }} د.ع</strong></td>
+                    </tr>
+                    <tr>
+                        <th>مبلغ الضمان</th>
+                        <td class="text-right"><strong>{{ number_format($totalInsurance, 0) }} د.ع</strong></td>
+                    </tr>
+                @endif
+                <tr>
+                    <th>إجمالي الوصولات</th>
+                    <td class="text-right"><strong>{{ number_format($privateWing->receipts->sum('amount'), 0) }} د.ع</strong></td>
+                </tr>
+                <tr>
+                    <th>إجمالي الفائدة</th>
+                    <td class="text-right"><strong>{{ number_format($privateWing->receipts->sum('interest_amount'), 0) }} د.ع</strong></td>
+                </tr>
+                <tr>
+                    <th>إجمالي الإيداعات (مع الفائدة)</th>
+                    <td class="text-right"><strong>{{ number_format($privateWing->receipts->sum('amount') + $privateWing->receipts->sum('interest_amount'), 0) }} د.ع</strong></td>
                 </tr>
                 <tr>
                     <th>المبلغ المتبقي</th>
-                    <td class="text-right"><strong>{{ number_format($privateWing->total_amount - $privateWing->receipts->sum(function($receipt) { return $receipt->amount + $receipt->interest_amount; }), 0) }} د.ع</strong></td>
+                    @php
+                        $patientAmount = $privateWing->is_insured && $totalPatient > 0 ? $totalPatient : $privateWing->total_amount;
+                        $totalDepositsOnly = $privateWing->receipts->sum('amount');
+                        // المعادلة: المبلغ المتبقي = مبلغ الوصولات (بدون فائدة) - مبلغ المريض
+                        $remaining = $totalDepositsOnly - $patientAmount;
+                    @endphp
+                    <td class="text-right"><strong>{{ number_format(abs($remaining), 0) }} د.ع</strong></td>
                 </tr>
             </table>
         </div>

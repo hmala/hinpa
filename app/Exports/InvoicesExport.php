@@ -24,7 +24,18 @@ class InvoicesExport implements FromCollection, WithHeadings, WithStyles, WithCo
      */
     public function collection()
     {
+        $currentUser = \Illuminate\Support\Facades\Auth::user();
+
         $query = PrivateWing::query();
+
+        // تطبيق قيود الصلاحيات
+        if (!in_array("Admin", $currentUser->roles_name) && !in_array("mohst", $currentUser->roles_name)) {
+            if ($currentUser->roles_name === ["stat-doh"]) {
+                $query->where('moh_id', $currentUser->mohcode);
+            } else {
+                $query->where('fck_id', $currentUser->fckid);
+            }
+        }
 
         // تطبيق نفس الفلاتر المستخدمة في الـ Controller
         if ($this->request && $this->request->filled('date_from')) {

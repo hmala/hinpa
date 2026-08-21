@@ -7,8 +7,9 @@ use App\Models\TypeSpecialization;
 use App\Models\Service_Specialization;
 use App\Imports\ServiceSpecializationImport;
 use Illuminate\Http\Request;
-use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ServiceSpecializationController extends Controller
 {
@@ -17,30 +18,42 @@ class ServiceSpecializationController extends Controller
     public function index()
     {
         $services = Service::all();
-        return view('service-specializations.index', compact('services'));
+        $serviceSpecializations = collect();
+        return view('service-specializations.index', compact('services', 'serviceSpecializations'));
     }
 
     public function create()
     {
         $services = Service::all();
         $typeSpecializations = TypeSpecialization::all();
-        return view('service-specializations.create', compact('services', 'typeSpecializations'));
+        $nextCode = DB::table('service_specialization')
+            ->selectRaw('MAX(CAST(codesv AS UNSIGNED)) as max_codesv')
+            ->value('max_codesv');
+        $nextCode = $nextCode ? ((int)$nextCode + 1) : 1;
+
+        return view('service-specializations.create', compact('services', 'typeSpecializations', 'nextCode'));
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'service_id' => 'required|exists:services,id',
+            'service_id' => 'required|exists:services,sercode',
             'type_specialization_id' => 'required|exists:type_specializations,id',
-            'codesv' => 'required|string',
             'namesv' => 'required|string',
             'price' => 'required|numeric',
             'notes' => 'nullable|string'
         ]);
 
-        $service = Service::findOrFail($request->service_id);
-        $service->typeSpecializations()->attach($request->type_specialization_id, [
-            'codesv' => $request->codesv,
+        $service = Service::where('sercode', $request->service_id)->firstOrFail();
+        $codesv = DB::table('service_specialization')
+            ->selectRaw('MAX(CAST(codesv AS UNSIGNED)) as max_codesv')
+            ->value('max_codesv');
+        $codesv = $codesv ? ((int)$codesv + 1) : 1;
+
+        Service_Specialization::create([
+            'service_id' => $request->service_id,
+            'type_specializations_id' => $request->type_specialization_id,
+            'codesv' => (string)$codesv,
             'namesv' => $request->namesv,
             'price' => $request->price,
             'notes' => $request->notes
@@ -75,7 +88,7 @@ class ServiceSpecializationController extends Controller
         $services = Service::all();
         $typeSpecializations = TypeSpecialization::all();
 
-        return view('services.specializations.edit', compact(
+        return view('service-specializations.edit', compact(
             'service',
             'specialization',
             'pivotData',

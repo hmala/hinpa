@@ -74,6 +74,13 @@
         </div>
         @endforeach
     </div>
+    
+    <!-- روابط التنقل بين الصفحات -->
+    <div class="row mt-4">
+        <div class="col-12 d-flex justify-content-center">
+            {{ $roles->links() }}
+        </div>
+    </div>
 </div>
 @endsection
 

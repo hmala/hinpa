@@ -26,6 +26,9 @@
     </div>
     <div class="d-flex my-xl-auto left-content">
         <div class="mb-3 mb-xl-0">
+            <a href="{{ route('users.create') }}" class="btn btn-primary mr-2">
+                <i class="fas fa-user-plus"></i> إضافة مستخدم جديد
+            </a>
             <a href="{{ route('users.export') }}" class="btn btn-success">
                 <i class="mdi mdi-file-excel"></i> تصدير Excel
             </a>

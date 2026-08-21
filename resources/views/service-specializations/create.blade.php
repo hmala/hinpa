@@ -43,7 +43,7 @@
                                 <select id="service_id" name="service_id" class="form-control @error('service_id') is-invalid @enderror" required>
                                     <option value="">اختر الخدمة</option>
                                     @foreach ($services as $service)
-                                        <option value="{{ $service->sercode }}">{{ $service->sername }}</option>
+                                        <option value="{{ $service->sercode }}" data-sercode="{{ $service->sercode }}" {{ old('service_id') == $service->sercode ? 'selected' : '' }}>{{ $service->sername }}</option>
                                     @endforeach
                                 </select>
                                 @error('service_id')
@@ -59,7 +59,7 @@
                                 <select id="type_specialization_id" name="type_specialization_id" class="form-control @error('type_specialization_id') is-invalid @enderror" required>
                                     <option value="">اختر التخصص</option>
                                     @foreach ($typeSpecializations as $specialization)
-                                        <option value="{{ $specialization->id }}">{{ $specialization->tsname }}</option>
+                                        <option value="{{ $specialization->id }}" data-tscode="{{ $specialization->tscode }}" {{ old('type_specialization_id') == $specialization->id ? 'selected' : '' }}>{{ $specialization->tsname }}</option>
                                     @endforeach
                                 </select>
                                 @error('type_specialization_id')
@@ -75,7 +75,8 @@
                         <div class="form-group row mb-3">
                             <label for="codesv" class="col-md-4 col-form-label text-md-end">رمز الخدمة في التخصص</label>
                             <div class="col-md-6">
-                                <input id="codesv" type="text" class="form-control @error('codesv') is-invalid @enderror" name="codesv" value="{{ old('codesv') }}" required>
+                                <input id="codesv" type="text" readonly class="form-control @error('codesv') is-invalid @enderror" name="codesv" value="{{ old('codesv', $nextCode) }}">
+                                <small class="form-text text-muted">يتم توليد الرمز تلقائياً من آخر قيمة محفوظة.</small>
                                 @error('codesv')
                                     <span class="invalid-feedback" role="alert">
                                         <strong>{{ $message }}</strong>
@@ -136,4 +137,32 @@
         </div>
     </div>
 </div>
+@endsection
+
+@section('js')
+<script>
+    $(document).ready(function() {
+        var previousAutoValue = null;
+
+        function updateCodesvField() {
+            var selectedService = $('#service_id option:selected');
+            var selectedType = $('#type_specialization_id option:selected');
+            var serviceCode = selectedService.data('sercode') || '';
+            var typeCode = selectedType.data('tscode') || '';
+            var $codesv = $('#codesv');
+            var currentValue = $codesv.val();
+
+            if (serviceCode && typeCode) {
+                var generated = typeCode.toString() + serviceCode.toString();
+                if (!currentValue || currentValue === previousAutoValue) {
+                    $codesv.val(generated);
+                    previousAutoValue = generated;
+                }
+            }
+        }
+
+        $('#service_id, #type_specialization_id').on('change', updateCodesvField);
+        updateCodesvField();
+    });
+</script>
 @endsection

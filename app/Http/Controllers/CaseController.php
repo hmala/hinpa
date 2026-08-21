@@ -223,11 +223,15 @@ public function edit($id)
  public function getBedsTotal($month, $year)
 {
     $fck_id = Auth::user()->fckid;
+    $emergencyId = \DB::table('rdhs')->where('Spcuname', 'طوارئ')->value('id');
 
-    // حساب مجموع الأسرة بناءً على الشهر والسنة
+    // حساب مجموع الأسرة المهيئة من جدول pations عدا أسرّة الطوارئ
     $totalBeds = Pations::where('month', $month)
         ->where('year', $year)
         ->where('fck_id', $fck_id)
+        ->when($emergencyId, function ($query) use ($emergencyId) {
+            return $query->where('spebed', '!=', $emergencyId);
+        })
         ->sum('bedm');
 
     return response()->json(['totalBeds' => $totalBeds]);

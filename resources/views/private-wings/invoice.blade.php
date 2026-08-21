@@ -112,6 +112,11 @@
                 <td>درجة العملية</td>
                 <td>عدد الأيام</td>
                 <td>المبلغ (د.ع)</td>
+                @if($privateWing->is_insured)
+                    <td>الضمان (%)</td>
+                    <td>مبلغ المريض</td>
+                    <td>مبلغ الضمان</td>
+                @endif
             </tr>
             @foreach($services as $service)
             <tr class="item">
@@ -119,30 +124,99 @@
                 <td>{{ $service->doctor_name ?? '' }}</td>
                 <td>{{ $service->operation_degree ?? '' }}</td>
                 <td>{{ $service->is_daily ? $privateWing->days_count : '-' }}</td>
-                <td>{{ number_format($service->total_amount, 2) }}</td>
+                <td>{{ number_format($service->total_amount, 0) }}</td>
+                @if($privateWing->is_insured)
+                    <td>{{ $service->is_insured ? ($service->insurance_percentage ?? 10) : '-' }}</td>
+                    <td>{{ number_format($service->patient_amount ?? $service->total_amount, 0) }}</td>
+                    <td>{{ number_format($service->insurance_amount ?? 0, 0) }}</td>
+                @endif
             </tr>
             @endforeach
 
+            @php
+                // حساب المبلغ المريض والضمان
+                $totalPatient = 0;
+                $totalInsurance = 0;
+                foreach($services as $service) {
+                    if($privateWing->is_insured && $service->is_insured) {
+                        $totalPatient += $service->patient_amount ?? 0;
+                        $totalInsurance += $service->insurance_amount ?? 0;
+                    } else {
+                        $totalPatient += $service->total_amount;
+                    }
+                }
+                
+                // حساب الإيداعات
+                $totalDeposits = $privateWing->receipts->sum('amount');
+                $totalInterest = $privateWing->receipts->sum('interest_amount');
+                $totalDepositsWithInterest = $totalDeposits + $totalInterest;
+                
+                // المعادلة: المبلغ المتبقي = مبلغ الوصولات (بدون فائدة) - مبلغ المريض
+                $remaining = $totalDeposits - $totalPatient;
+            @endphp
+
             <tr class="total">
-                <td colspan="4">إجمالي المبلغ</td>
-                <td>{{ number_format($totalAmount, 2) }} د.ع</td>
+                <td colspan="{{ $privateWing->is_insured ? 8 : 4 }}">إجمالي الخدمات</td>
+                <td>{{ number_format($totalAmount, 0) }} د.ع</td>
             </tr>
+            
+            @if($privateWing->is_insured)
+            <tr class="item">
+                <td colspan="{{ $privateWing->is_insured ? 8 : 4 }}">مبلغ المريض</td>
+                <td>{{ number_format($totalPatient, 0) }} د.ع</td>
+            </tr>
+            <tr class="item">
+                <td colspan="{{ $privateWing->is_insured ? 8 : 4 }}">مبلغ الضمان</td>
+                <td>{{ number_format($totalInsurance, 0) }} د.ع</td>
+            </tr>
+            @endif
 
             <tr class="item">
-                <td colspan="4">مبلغ التأمينات</td>
-                <td>{{ number_format($privateWing->deposit_amount, 2) }} د.ع</td>
+                <td colspan="{{ $privateWing->is_insured ? 8 : 4 }}">إجمالي الوصولات (بدون فائدة)</td>
+                <td>{{ number_format($totalDeposits, 0) }} د.ع</td>
+            </tr>
+            
+            <tr class="item">
+                <td colspan="{{ $privateWing->is_insured ? 8 : 4 }}">إجمالي الفائدة</td>
+                <td>{{ number_format($totalInterest, 0) }} د.ع</td>
+            </tr>
+            
+            <tr class="item">
+                <td colspan="{{ $privateWing->is_insured ? 8 : 4 }}">إجمالي الإيداعات (مع الفائدة)</td>
+                <td>{{ number_format($totalDepositsWithInterest, 0) }} د.ع</td>
             </tr>
 
             <tr class="total">
-                <td colspan="4">المبلغ المتبقي</td>
-                <td>{{ number_format($totalAmount - $privateWing->deposit_amount, 2) }} د.ع</td>
+                <td colspan="{{ $privateWing->is_insured ? 8 : 4 }}">المبلغ المتبقي</td>
+                <td>{{ number_format(abs($remaining), 0) }} د.ع {{ $remaining < 0 ? '(عليه)' : ($remaining > 0 ? '(له)' : '') }}</td>
             </tr>
         </table>
 
-        <div style="margin-top: 40px">
-            <p><strong>رقم وصل التأمينات:</strong> {{ $privateWing->receipt_number }}</p>
-            <p><strong>تاريخ الوصل:</strong> {{ $privateWing->receipt_date }}</p>
+        @if($privateWing->receipts->count() > 0)
+        <div style="margin-top: 20px">
+            <h4>وصولات التأمين:</h4>
+            <table style="width: 100%; border-collapse: collapse;">
+                <tr style="background: #eee; border: 1px solid #ddd;">
+                    <th style="border: 1px solid #ddd; padding: 5px;">#</th>
+                    <th style="border: 1px solid #ddd; padding: 5px;">رقم الوصل</th>
+                    <th style="border: 1px solid #ddd; padding: 5px;">المبلغ</th>
+                    <th style="border: 1px solid #ddd; padding: 5px;">التاريخ</th>
+                    <th style="border: 1px solid #ddd; padding: 5px;">النوع</th>
+                    <th style="border: 1px solid #ddd; padding: 5px;">الفائدة</th>
+                </tr>
+                @foreach($privateWing->receipts as $index => $receipt)
+                <tr>
+                    <td style="border: 1px solid #ddd; padding: 5px; text-align: center;">{{ $index + 1 }}</td>
+                    <td style="border: 1px solid #ddd; padding: 5px;">{{ $receipt->receipt_number }}</td>
+                    <td style="border: 1px solid #ddd; padding: 5px;">{{ number_format($receipt->amount, 0) }}</td>
+                    <td style="border: 1px solid #ddd; padding: 5px;">{{ $receipt->receipt_date->format('Y-m-d') }}</td>
+                    <td style="border: 1px solid #ddd; padding: 5px;">{{ $receipt->payment_type }}</td>
+                    <td style="border: 1px solid #ddd; padding: 5px;">{{ number_format($receipt->interest_amount, 0) }}</td>
+                </tr>
+                @endforeach
+            </table>
         </div>
+        @endif
 
         <div style="margin-top: 60px">
             <p style="text-align: center">التوقيع: ________________</p>

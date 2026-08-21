@@ -10,14 +10,30 @@ use Illuminate\Support\Facades\Auth;
 
 class DoctorController extends Controller
 {
+    function __construct()
+    {
+        $this->middleware('permission:الأجنحة الخاصة', ['only' => ['index', 'create', 'store', 'edit', 'update', 'destroy']]);
+    }
+    
     /**
      * Display a listing of the resource.
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(Request $request)
     {
-        $doctors = Doctor::with('moh', 'fck')->paginate(20);
+        $currentUser = Auth::user();
+        $query = Doctor::with('moh', 'fck');
+
+        if (!in_array("Admin", $currentUser->roles_name) && !in_array("mohst", $currentUser->roles_name)) {
+            if ($currentUser->roles_name === ["stat-doh"]) {
+                $query->where('moh_id', $currentUser->mohcode);
+            } else {
+                $query->where('fck_id', $currentUser->fckid);
+            }
+        }
+
+        $doctors = $query->paginate(20);
         return view('doctors.index', compact('doctors'));
     }
 
@@ -63,7 +79,17 @@ class DoctorController extends Controller
      */
     public function show($id)
     {
+        $currentUser = Auth::user();
         $doctor = Doctor::with('moh', 'fck')->findOrFail($id);
+
+        if (!in_array("Admin", $currentUser->roles_name) && !in_array("mohst", $currentUser->roles_name)) {
+            if ($currentUser->roles_name === ["stat-doh"]) {
+                if ($doctor->moh_id != $currentUser->mohcode) abort(403);
+            } else {
+                if ($doctor->fck_id != $currentUser->fckid) abort(403);
+            }
+        }
+
         return view('doctors.show', compact('doctor'));
     }
 
@@ -75,7 +101,17 @@ class DoctorController extends Controller
      */
     public function edit($id)
     {
+        $currentUser = Auth::user();
         $doctor = Doctor::findOrFail($id);
+
+        if (!in_array("Admin", $currentUser->roles_name) && !in_array("mohst", $currentUser->roles_name)) {
+            if ($currentUser->roles_name === ["stat-doh"]) {
+                if ($doctor->moh_id != $currentUser->mohcode) abort(403);
+            } else {
+                if ($doctor->fck_id != $currentUser->fckid) abort(403);
+            }
+        }
+
         return view('doctors.edit', compact('doctor'));
     }
 
@@ -94,7 +130,16 @@ class DoctorController extends Controller
             'job_title' => 'required|string|max:255',
         ]);
 
+        $currentUser = Auth::user();
         $doctor = Doctor::findOrFail($id);
+
+        if (!in_array("Admin", $currentUser->roles_name) && !in_array("mohst", $currentUser->roles_name)) {
+            if ($currentUser->roles_name === ["stat-doh"]) {
+                if ($doctor->moh_id != $currentUser->mohcode) abort(403);
+            } else {
+                if ($doctor->fck_id != $currentUser->fckid) abort(403);
+            }
+        }
         $data = $request->only(['name', 'address', 'job_title']);
         $data['institution'] = Auth::user()->fck->Fckname ?? 'غير محدد';
         $data['moh_id'] = Auth::user()->mohcode;
@@ -112,7 +157,17 @@ class DoctorController extends Controller
      */
     public function destroy($id)
     {
+        $currentUser = Auth::user();
         $doctor = Doctor::findOrFail($id);
+
+        if (!in_array("Admin", $currentUser->roles_name) && !in_array("mohst", $currentUser->roles_name)) {
+            if ($currentUser->roles_name === ["stat-doh"]) {
+                if ($doctor->moh_id != $currentUser->mohcode) abort(403);
+            } else {
+                if ($doctor->fck_id != $currentUser->fckid) abort(403);
+            }
+        }
+
         $doctor->delete();
 
         return redirect()->route('doctors.index')->with('success', 'Doctor deleted successfully.');

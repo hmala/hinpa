@@ -19,14 +19,19 @@ class OperationFeesExport implements FromCollection, WithHeadings, WithStyles, W
     protected $year;
     protected $operationFeesByDegree;
 
-    public function __construct($month = null, $year = null)
+    public function __construct($month = null, $year = null, $request = null)
     {
         $this->month = $month;
         $this->year = $year;
+        $request = $request ?: request();
         $this->operationDegrees = ['الخاصة', 'فوق الكبرى', 'كبرى', 'متوسطة', 'صغرى'];
 
         // Get operation fees grouped by operation degree
         $operationFeesByDegree = [];
+
+        $currentUser = \Illuminate\Support\Facades\Auth::user();
+        $userMohId = $currentUser->mohcode;
+        $userFckId = $currentUser->fckid;
 
         foreach ($this->operationDegrees as $degree) {
             $query = PrivateWingService::with(['service' => function($query) {
@@ -38,6 +43,33 @@ class OperationFeesExport implements FromCollection, WithHeadings, WithStyles, W
                       ->orWhere('namesv', 'like', '%جراحة%')
                       ->orWhere('namesv', 'like', '%عمليات%');
             });
+
+            // تطبيق قيود الصلاحيات والبحث حسب الدائرة والمستشفى
+            if (in_array("Admin", $currentUser->roles_name) || in_array("mohst", $currentUser->roles_name)) {
+                if ($request->filled('moh_id')) {
+                    $query->whereHas('privateWing', function($q) use ($request) {
+                        $q->where('moh_id', $request->moh_id);
+                    });
+                }
+                if ($request->filled('fck_id')) {
+                    $query->whereHas('privateWing', function($q) use ($request) {
+                        $q->where('fck_id', $request->fck_id);
+                    });
+                }
+            } elseif ($currentUser->roles_name === ["stat-doh"]) {
+                $query->whereHas('privateWing', function($q) use ($userMohId) {
+                    $q->where('moh_id', $userMohId);
+                });
+                if ($request->filled('fck_id')) {
+                    $query->whereHas('privateWing', function($q) use ($request) {
+                        $q->where('fck_id', $request->fck_id);
+                    });
+                }
+            } else {
+                $query->whereHas('privateWing', function($q) use ($userFckId) {
+                    $q->where('fck_id', $userFckId);
+                });
+            }
 
             // إضافة فلتر الشهر والسنة
             if ($this->month && $this->year) {

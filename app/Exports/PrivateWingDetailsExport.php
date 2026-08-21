@@ -13,13 +13,44 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 class PrivateWingDetailsExport implements FromCollection, WithHeadings, WithStyles, WithColumnWidths, WithTitle
 {
     protected $usedServices;
+    protected $request;
 
-    public function __construct()
+    public function __construct($request = null)
     {
-        // جلب الخدمات المستخدمة في الأجنحة الخاصة
-        $this->usedServices = \App\Models\PrivateWingService::with('service')
-            ->whereHas('privateWing')
-            ->select('service_id')
+        $this->request = $request ?: request();
+        $currentUser = \Illuminate\Support\Facades\Auth::user();
+        $userMohId = $currentUser->mohcode;
+        $userFckId = $currentUser->fckid;
+
+        $usedServicesQuery = \App\Models\PrivateWingService::with('service')->select('service_id');
+
+        if (in_array("Admin", $currentUser->roles_name) || in_array("mohst", $currentUser->roles_name)) {
+            if ($this->request->filled('moh_id')) {
+                $usedServicesQuery->whereHas('privateWing', function ($q) {
+                    $q->where('moh_id', $this->request->moh_id);
+                });
+            }
+            if ($this->request->filled('fck_id')) {
+                $usedServicesQuery->whereHas('privateWing', function ($q) {
+                    $q->where('fck_id', $this->request->fck_id);
+                });
+            }
+        } elseif ($currentUser->roles_name === ["stat-doh"]) {
+            $usedServicesQuery->whereHas('privateWing', function ($q) use ($userMohId) {
+                $q->where('moh_id', $userMohId);
+            });
+            if ($this->request->filled('fck_id')) {
+                $usedServicesQuery->whereHas('privateWing', function ($q) {
+                    $q->where('fck_id', $this->request->fck_id);
+                });
+            }
+        } else {
+            $usedServicesQuery->whereHas('privateWing', function ($q) use ($userFckId) {
+                $q->where('fck_id', $userFckId);
+            });
+        }
+
+        $this->usedServices = $usedServicesQuery
             ->distinct()
             ->get()
             ->pluck('service.namesv', 'service_id')
@@ -32,7 +63,11 @@ class PrivateWingDetailsExport implements FromCollection, WithHeadings, WithStyl
      */
     public function collection()
     {
-        $privateWings = PrivateWing::with(['receipts', 'privateWingServices.service', 'privateWingServices.doctor', 'privateWingServices.service.typeSpecialization'])
+        $currentUser = \Illuminate\Support\Facades\Auth::user();
+        $userMohId = $currentUser->mohcode;
+        $userFckId = $currentUser->fckid;
+
+        $privateWingsQuery = PrivateWing::with(['receipts', 'privateWingServices.service', 'privateWingServices.doctor', 'privateWingServices.service.typeSpecialization'])
             ->select([
                 'id',
                 'patient_name',
@@ -43,9 +78,45 @@ class PrivateWingDetailsExport implements FromCollection, WithHeadings, WithStyl
                 'exit_date',
                 'days_count',
                 'is_insured'
-            ])
-            ->orderBy('created_at', 'desc')
-            ->get();
+            ])->orderBy('created_at', 'desc');
+
+        if (in_array("Admin", $currentUser->roles_name) || in_array("mohst", $currentUser->roles_name)) {
+            if ($this->request->filled('moh_id')) {
+                $privateWingsQuery->where('moh_id', $this->request->moh_id);
+            }
+            if ($this->request->filled('fck_id')) {
+                $privateWingsQuery->where('fck_id', $this->request->fck_id);
+            }
+        } elseif ($currentUser->roles_name === ["stat-doh"]) {
+            $privateWingsQuery->where('moh_id', $userMohId);
+            if ($this->request->filled('fck_id')) {
+                $privateWingsQuery->where('fck_id', $this->request->fck_id);
+            }
+        } else {
+            $privateWingsQuery->where('fck_id', $userFckId);
+        }
+
+        // Apply remaining filters from request
+        if ($this->request->filled('patient_name')) {
+            $privateWingsQuery->where('patient_name', 'like', '%' . $this->request->patient_name . '%');
+        }
+        if ($this->request->filled('file_number')) {
+            $privateWingsQuery->where('file_number', 'like', '%' . $this->request->file_number . '%');
+        }
+        if ($this->request->filled('entry_date_from')) {
+            $privateWingsQuery->whereDate('entry_date', '>=', $this->request->entry_date_from);
+        }
+        if ($this->request->filled('entry_date_to')) {
+            $privateWingsQuery->whereDate('entry_date', '<=', $this->request->entry_date_to);
+        }
+        if ($this->request->filled('month')) {
+            $privateWingsQuery->whereMonth('entry_date', $this->request->month);
+        }
+        if ($this->request->filled('year')) {
+            $privateWingsQuery->whereYear('entry_date', $this->request->year);
+        }
+
+        $privateWings = $privateWingsQuery->get();
 
         $data = [];
 

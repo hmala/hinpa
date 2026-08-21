@@ -34,6 +34,44 @@
         left: 0;
         top: 0;
     }
+    
+    /* أنماط الطباعة */
+    @media print {
+        .no-print, 
+        .card-header,
+        .btn,
+        button,
+        .modal,
+        .breadcrumb-header,
+        th:last-child,
+        td:last-child {
+            display: none !important;
+        }
+        
+        .table {
+            font-size: 10pt;
+        }
+        
+        .table th,
+        .table td {
+            padding: 5px;
+        }
+        
+        body {
+            direction: rtl;
+        }
+        
+        @page {
+            size: A4 landscape;
+            margin: 10mm;
+        }
+    }
+</style>
+<style>
+    select option {
+        color: #000 !important;
+        background-color: #fff !important;
+    }
 </style>
 @endsection
 @section('page-header')
@@ -55,10 +93,10 @@
     <div class="row justify-content-center">
         <div class="col-md-12">
             <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
+                <div class="card-header d-flex justify-content-between align-items-center no-print">
                     <h2 class="mb-0">قائمة حسابات الأجنحة الخاصة</h2>
                     <div>
-                        <button type="button" class="btn btn-info ms-2" data-bs-toggle="modal" data-bs-target="#searchModal" onclick="$('#searchModal').modal('show');">
+                        <button type="button" class="btn btn-info ms-2" data-toggle="modal" data-target="#searchModal" onclick="$('#searchModal').modal('show');">
                             <i class="fas fa-search"></i> بحث متقدم
                         </button>
                         <button type="button" class="btn btn-success ms-2" onclick="window.print()">
@@ -67,7 +105,7 @@
                         <a href="{{ route('private-wings.export', request()->query()) }}" class="btn btn-primary ms-2">
                             <i class="fas fa-file-excel"></i> تصدير Excel
                         </a>
-                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#selectPatientTypeModal">
+                        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#selectPatientTypeModal">
                             <i class="fas fa-plus"></i> إضافة جديد
                         </button>
                         <a href="{{ route('private-wings.trashed') }}" class="btn btn-warning ms-2">
@@ -77,8 +115,46 @@
                 </div>
 
                 <div class="card-body">
+                    <!-- عنوان الطباعة - يظهر فقط عند الطباعة -->
+                    <div class="d-none" style="display: none;">
+                        <style>
+                            @media print {
+                                .print-header {
+                                    display: block !important;
+                                    text-align: center;
+                                    margin-bottom: 20px;
+                                }
+                                .print-header h2 {
+                                    font-size: 20pt;
+                                    font-weight: bold;
+                                }
+                                .print-header p {
+                                    font-size: 12pt;
+                                    margin: 5px 0;
+                                }
+                            }
+                        </style>
+                        <div class="print-header">
+                            <h2>قائمة حسابات الأجنحة الخاصة</h2>
+                            <p>تاريخ الطباعة: {{ date('Y-m-d H:i') }}</p>
+                            @if(request()->hasAny(['patient_name', 'hospital', 'created_at_from', 'created_at_to', 'patient_type', 'annual_number', 'statistical_number', 'payment_status', 'patient_phone']))
+                            <p>البحث المطبق: 
+                                @if(request('patient_name')) اسم المريض: {{ request('patient_name') }} | @endif
+                                @if(request('patient_phone')) الهاتف: {{ request('patient_phone') }} | @endif
+                                @if(request('hospital')) المستشفى: {{ request('hospital') }} | @endif
+                                @if(request('patient_type')) نوع المريض: {{ request('patient_type') == 'outpatient' ? 'غير راقد' : 'راقد' }} | @endif
+                                @if(request('annual_number')) الترقيم السنوي: {{ request('annual_number') }} | @endif
+                                @if(request('statistical_number')) الرقم الإحصائي: {{ request('statistical_number') }} | @endif
+                                @if(request('payment_status')) حالة الدفع: {{ request('payment_status') == 'paid' ? 'مدفوع' : 'غير مدفوع' }} | @endif
+                                @if(request('created_at_from')) من: {{ request('created_at_from') }} | @endif
+                                @if(request('created_at_to')) إلى: {{ request('created_at_to') }} @endif
+                            </p>
+                            @endif
+                        </div>
+                    </div>
+
                     @if(session('success'))
-                        <div class="alert alert-success">
+                        <div class="alert alert-success no-print">
                             {{ session('success') }}
                         </div>
                     @endif
@@ -86,10 +162,12 @@
                         $debtWingsCount = $debtWingsCount ?? 0;
                     @endphp
                     @if($debtWingsCount > 0)
-                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <div class="alert alert-danger alert-dismissible fade show no-print" role="alert">
                         <i class="fas fa-exclamation-triangle"></i>
                         <strong>تنبيه!</strong> يوجد {{ $debtWingsCount }} حساب جناح خاص يحتاج لتسديد المبالغ المستحقة.
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
                     </div>
                     @endif
 
@@ -99,7 +177,9 @@
                                 <tr>
                                     <th>#</th>
                                     <th>اسم المريض</th>
+                                    <th>رقم الهاتف</th>
                                     <th>جنسية المريض</th>
+                                    <th>نوع المريض</th>
                                     <th>المستشفى</th>
                                     <th>الترقيم السنوي</th>
                                    <th>تاريخ الدخول</th>
@@ -112,26 +192,57 @@
                             <tbody>
                                 @foreach($privateWings as $wing)
                                 @php
-                                    $remaining = $wing->deposit_amount - $wing->total_amount;
-                                    $hasDebt = $remaining < 0;
-                                    $hasRefund = $remaining > 0;
-                                    $hasRefundPayment = ($wing->refund_amount ?? 0) > 0; // تم دفع استرداد
+                                    // حساب المتبقي بدون مبلغ الفائدة (مطابق للطباعة)
+                                    $totalDepositsWithoutInterest = $wing->receipts->sum('amount');
+                                    $remaining = $totalDepositsWithoutInterest - $wing->total_amount;
+                                    
+                                    // خصم المبلغ المسترد من المتبقي
+                                    $refundedAmount = $wing->refund_amount ?? 0;
+                                    $remainingAfterRefund = $remaining - $refundedAmount;
+                                    
+                                    $hasDebt = $remainingAfterRefund < 0;
+                                    $hasRefund = $remainingAfterRefund > 0;
+                                    $hasRefundPayment = $refundedAmount > 0; // تم دفع استرداد
                                 @endphp
                                 <tr class="{{ $hasRefundPayment ? 'table-info' : ($hasDebt ? 'table-danger' : ($hasRefund ? 'table-success' : ($wing->cancelled_at ? 'table-warning' : ''))) }}">
                                     <td>{{ $loop->iteration }}</td>
                                     <td>{{ $wing->patient_name }}</td>
+                                    <td>{{ $wing->patient_phone ?: '-' }}</td>
                                     <td>{{ $wing->patient_nationality ?: '-' }}</td>
+                                    <td>
+                                        @if(($wing->patient_type ?? 'inpatient') == 'outpatient')
+                                            <span class="badge badge-success">غير راقد</span>
+                                        @else
+                                            <span class="badge badge-primary">راقد</span>
+                                        @endif
+                                    </td>
                                     <td>{{ $wing->hospital }}</td>
                                     <td><span class="badge badge-primary">سنوي: {{ $wing->annual_number }}/{{ $wing->fiscal_year }}</span></td>
-                                    <td>{{ $wing->entry_date }}</td>
-                                    <td>{{ $wing->exit_date }}</td>
+                                    <td>
+                                        {{ $wing->entry_date }}
+                                        @if($wing->entry_time)
+                                            <br><small>{{ $wing->entry_time }}</small>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        {{ $wing->exit_date }}
+                                        @if($wing->exit_time)
+                                            <br><small>{{ $wing->exit_time }}</small>
+                                        @endif
+                                    </td>
                                     <td>
                                         @if($hasRefundPayment)
-                                            <span class="badge badge-info">تم استرداد {{ number_format($wing->refund_amount, 0) }} د.ع</span>
+                                            @if($remainingAfterRefund > 0)
+                                                <span class="badge badge-success">تم استرداد {{ number_format($refundedAmount, 0) }} د.ع - الباقي له {{ number_format($remainingAfterRefund, 0) }} د.ع</span>
+                                            @elseif($remainingAfterRefund < 0)
+                                                <span class="badge badge-warning">تم استرداد {{ number_format($refundedAmount, 0) }} د.ع - عليه {{ number_format(abs($remainingAfterRefund), 0) }} د.ع</span>
+                                            @else
+                                                <span class="badge badge-info">تم استرداد {{ number_format($refundedAmount, 0) }} د.ع - مسدد بالكامل</span>
+                                            @endif
                                         @elseif($hasDebt)
-                                            <span class="badge badge-danger">يحتاج تسديد {{ number_format(abs($remaining), 0) }} د.ع</span>
+                                            <span class="badge badge-danger">يحتاج تسديد {{ number_format(abs($remainingAfterRefund), 0) }} د.ع</span>
                                         @elseif($hasRefund)
-                                            <span class="badge badge-success">له مبلغ {{ number_format($remaining, 0) }} د.ع</span>
+                                            <span class="badge badge-success">له مبلغ {{ number_format($remainingAfterRefund, 0) }} د.ع</span>
                                         @else
                                             <span class="badge badge-info">مدفوع بالكامل</span>
                                         @endif
@@ -167,7 +278,9 @@
                         </table>
                     </div>
 
-                    {{ $privateWings->links() }}
+                    <div class="no-print">
+                        {{ $privateWings->links() }}
+                    </div>
                 </div>
             </div>
         </div>
@@ -180,7 +293,9 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="searchModalLabel">البحث المتقدم</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
             </div>
             <form method="GET" action="{{ route('private-wings.index') }}">
                 <div class="modal-body">
@@ -188,6 +303,10 @@
                         <div class="col-md-6">
                             <label for="patient_name" class="form-label">اسم المريض</label>
                             <input type="text" class="form-control" id="patient_name" name="patient_name" value="{{ request('patient_name') }}" placeholder="ابحث باسم المريض">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="patient_phone" class="form-label">رقم الهاتف</label>
+                            <input type="text" class="form-control" id="patient_phone" name="patient_phone" value="{{ request('patient_phone') }}" placeholder="ابحث برقم الهاتف">
                         </div>
                         <div class="col-md-6">
                             <label for="hospital" class="form-label">المستشفى</label>
@@ -209,10 +328,48 @@
                                 <option value="unpaid" {{ request('payment_status') == 'unpaid' ? 'selected' : '' }}>غير مدفوع</option>
                             </select>
                         </div>
+                        <div class="col-md-6">
+                            <label for="patient_type" class="form-label">نوع المريض</label>
+                            <select class="form-control" id="patient_type" name="patient_type">
+                                <option value="">الكل</option>
+                                <option value="inpatient" {{ request('patient_type') == 'inpatient' ? 'selected' : '' }}>راقد (إقامة كاملة)</option>
+                                <option value="outpatient" {{ request('patient_type') == 'outpatient' ? 'selected' : '' }}>غير راقد (خدمة خارجية)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="annual_number" class="form-label">الترقيم السنوي</label>
+                            <input type="text" class="form-control" id="annual_number" name="annual_number" value="{{ request('annual_number') }}" placeholder="ابحث بالترقيم السنوي">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="statistical_number" class="form-label">الرقم الإحصائي</label>
+                            <input type="text" class="form-control" id="statistical_number" name="statistical_number" value="{{ request('statistical_number') }}" placeholder="ابحث بالرقم الإحصائي">
+                        </div>
+                        @if(in_array("Admin", auth()->user()->roles_name) || in_array("mohst", auth()->user()->roles_name))
+                        <div class="col-md-6">
+                            <label for="moh_id" class="form-label">الدائرة</label>
+                            <select class="form-control" id="moh_id" name="moh_id">
+                                <option value="">الكل</option>
+                                @foreach($availableMohs as $moh)
+                                    <option value="{{ $moh->id }}" {{ request('moh_id') == $moh->id ? 'selected' : '' }}>{{ $moh->mohname }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        @endif
+                        @if(in_array("Admin", auth()->user()->roles_name) || in_array("mohst", auth()->user()->roles_name) || auth()->user()->roles_name === ["stat-doh"])
+                        <div class="col-md-6">
+                            <label for="fck_id" class="form-label">المستشفى</label>
+                            <select class="form-control" id="fck_id" name="fck_id">
+                                <option value="">الكل</option>
+                                @foreach($availableFcks as $fck)
+                                    <option value="{{ $fck->id }}" data-moh-id="{{ $fck->moh_id }}" {{ request('fck_id') == $fck->id ? 'selected' : '' }}>{{ $fck->Fckname }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        @endif
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">إلغاء</button>
                     <a href="{{ route('private-wings.index') }}" class="btn btn-outline-secondary">إعادة تعيين</a>
                     <button type="submit" class="btn btn-primary">بحث</button>
                 </div>
@@ -224,9 +381,12 @@
 <!-- Modals للاسترداد -->
 @foreach($privateWings as $wing)
     @php
-        $remaining = $wing->deposit_amount - $wing->total_amount;
-        $hasRefund = $remaining > 0;
-        $availableForRefund = $remaining - ($wing->refund_amount ?? 0);
+        // حساب المتبقي بدون مبلغ الفائدة (مطابق للطباعة)
+        $totalDepositsWithoutInterest = $wing->receipts->sum('amount');
+        $remaining = $totalDepositsWithoutInterest - $wing->total_amount;
+        $refundedAmount = $wing->refund_amount ?? 0;
+        $availableForRefund = $remaining - $refundedAmount;
+        $hasRefund = $availableForRefund > 0;
     @endphp
     
     @if($hasRefund && $availableForRefund > 0 && !$wing->cancelled_at)
@@ -288,7 +448,9 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="cancelModalLabel">إبطال قائمة</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span>&times;</span>
+                </button>
             </div>
             <form id="cancelForm" method="POST">
                 @csrf
@@ -304,7 +466,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">إلغاء</button>
                     <button type="submit" class="btn btn-warning">إبطال القائمة</button>
                 </div>
             </form>
@@ -378,6 +540,40 @@
 <script src="{{ URL::asset('assets/plugins/datatable/js/responsive.bootstrap4.min.js') }}"></script>
 <!--Internal  Datatable js -->
 <script src="{{ URL::asset('assets/js/table-data.js') }}"></script>
+
+<script>
+    $(document).ready(function() {
+        var $mohSelect = $('#moh_id');
+        var $fckSelect = $('#fck_id');
+        
+        if ($mohSelect.length && $fckSelect.length) {
+            var allOptions = $fckSelect.find('option').clone();
+            
+            function filterHospitals() {
+                var selectedMoh = $mohSelect.val();
+                var currentSelectedFck = $fckSelect.val();
+                
+                $fckSelect.empty();
+                
+                allOptions.each(function() {
+                    var optMohId = $(this).attr('data-moh-id');
+                    if (!$(this).val() || !selectedMoh || optMohId == selectedMoh) {
+                        $fckSelect.append($(this).clone());
+                    }
+                });
+                
+                if (currentSelectedFck && $fckSelect.find('option[value="'+currentSelectedFck+'"]').length) {
+                    $fckSelect.val(currentSelectedFck);
+                } else if (currentSelectedFck) {
+                    $fckSelect.val('');
+                }
+            }
+            
+            $mohSelect.on('change', filterHospitals);
+            filterHospitals();
+        }
+    });
+</script>
 <!--Internal  Notify js -->
 <script src="{{ URL::asset('assets/plugins/notify/js/notifIt.js') }}"></script>
 <script src="{{ URL::asset('assets/plugins/notify/js/notifit-custom.js') }}"></script>

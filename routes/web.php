@@ -14,6 +14,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PrivateWingController;
 use App\Http\Controllers\TypeSpecializationController;
 use App\Http\Controllers\PrivateWingDetailsController;
+use App\Http\Controllers\PrivateVisitController;
+use App\Http\Controllers\PrivateVisitDetailsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -35,8 +37,8 @@ Route::get('/no-permissions', function() {
 
 
 
-
-Auth::routes();
+// تعطيل route التسجيل العام - المستخدمون يضافون من لوحة التحكم فقط
+Auth::routes(['register' => false]);
 
 
 Route::middleware(['2fa'])->group(function () {
@@ -47,15 +49,18 @@ Route::middleware(['2fa'])->group(function () {
         return redirect(route('home'));
     })->name('2fa');
 });
-Route::get('/register', function () {
-    $mohs = App\Models\mohs::all();
-    $fctypes = App\Models\Fctypes::all();
-    $fck = App\Models\fck::all();
 
-    return view('auth.register', compact('mohs', 'fctypes', 'fck'));
-})->name('register');
-Route::post('/getInstitutionsForRegister', [RegisterController::class, 'getInstitutions'])->name('getInstitutionsForRegister');
-Route::get('/complete-registration', [RegisterController::class, 'completeRegistration'])->name('complete.registration');
+// تم تعطيل التسجيل العام - يتم إضافة المستخدمين من صفحة المستخدمين الإدارية فقط
+// Route::get('/register', function () {
+//     $mohs = App\Models\mohs::all();
+//     $fctypes = App\Models\Fctypes::all();
+//     $fck = App\Models\fck::all();
+//
+//     return view('auth.register', compact('mohs', 'fctypes', 'fck'));
+// })->name('register');
+// Route::post('/getInstitutionsForRegister', [RegisterController::class, 'getInstitutions'])->name('getInstitutionsForRegister');
+// Route::get('/complete-registration', [RegisterController::class, 'completeRegistration'])->name('complete.registration');
+
 Route::resource('mohs', 'App\Http\Controllers\MohsController');
 Route::resource('Fctypes', 'App\Http\Controllers\FctypesController');
 Route::resource('pations', 'App\Http\Controllers\PationsController');
@@ -81,6 +86,12 @@ Route::get('/edit_salat/{id}', 'App\Http\Controllers\SalatController@edit');
 Route::put('salat/update', [SalatController::class, 'update'])->name('salat.update');
 Route::resource('surgs', 'App\Http\Controllers\SalatController');
 Route::get('/report', 'App\Http\Controllers\PationsController@print_pations');
+Route::get('/institutions-by-hall-type', [App\Http\Controllers\InstitutionReportController::class, 'institutionsByHallType'])->name('institutions.by.hall.type')->middleware('auth');
+Route::get('/institutions-by-hall-type/details/{hallTypeId}', [App\Http\Controllers\InstitutionReportController::class, 'getInstitutionsByHallType'])->name('institutions.by.hall.type.details');
+Route::get('/institutions-by-type-department', [App\Http\Controllers\InstitutionReportController::class, 'institutionsByTypeAndDepartment'])->name('institutions.by.type.department')->middleware('auth');
+Route::get('/institutions-by-type-department/details', [App\Http\Controllers\InstitutionReportController::class, 'getInstitutionsByTypeDepartment'])->name('institutions.by.type.department.details');
+Route::get('/institutions-without-users', [App\Http\Controllers\InstitutionReportController::class, 'getInstitutionsWithoutUsers'])->name('institutions.without.users');
+Route::get('/test-route', function() { return response()->json(['status' => 'ok']); });
 Route::resource('hwadths', HwadthController::class);
 use App\Http\Controllers\CaseController;
 
@@ -153,6 +164,7 @@ Route::group(['middleware' => ['auth']], function () {
     // Private Wing trashed routes
     Route::get('private-wings/trashed', [PrivateWingController::class, 'trashed'])->name('private-wings.trashed');
     Route::get('private-wings/get-next-numbers', [PrivateWingController::class, 'getNextNumbers'])->name('private-wings.get-next-numbers');
+    Route::get('private-wings/export', [PrivateWingController::class, 'export'])->name('private-wings.export');
     Route::get('invoice/private-wing/{wing}', [PrivateWingController::class, 'invoice'])->name('private-wings.invoice');
     Route::get('private-wings/{wing}/show', [PrivateWingController::class, 'show'])->name('private-wings.show');
     Route::patch('private-wings/cancel/{id}', [PrivateWingController::class, 'cancel'])->name('private-wings.cancel');
@@ -160,6 +172,20 @@ Route::group(['middleware' => ['auth']], function () {
     Route::delete('private-wings/refund/{refund}', [PrivateWingController::class, 'deleteRefund'])->name('private-wings.delete-refund');
     Route::get('private-wings/{wing}/refund-receipt', [PrivateWingController::class, 'refundReceipt'])->name('private-wings.refund-receipt');
     Route::resource('private-wings', PrivateWingController::class);
+
+    // Private Visit routes
+    Route::get('private-visits/trashed', [PrivateVisitController::class, 'trashed'])->name('private-visits.trashed');
+    Route::get('private-visits/get-next-numbers', [PrivateVisitController::class, 'getNextNumbers'])->name('private-visits.get-next-numbers');
+    Route::get('private-visits/export', [PrivateVisitController::class, 'export'])->name('private-visits.export');
+    Route::get('invoice/private-visit/{visit}', [PrivateVisitController::class, 'invoice'])->name('private-visits.invoice');
+    Route::get('private-visits/{visit}/show', [PrivateVisitController::class, 'show'])->name('private-visits.show');
+    Route::patch('private-visits/cancel/{id}', [PrivateVisitController::class, 'cancel'])->name('private-visits.cancel');
+    Route::post('private-visits/{visit}/refund', [PrivateVisitController::class, 'addRefund'])->name('private-visits.add-refund');
+    Route::delete('private-visits/refund/{refund}', [PrivateVisitController::class, 'deleteRefund'])->name('private-visits.delete-refund');
+    Route::get('private-visits/{visit}/refund-receipt', [PrivateVisitController::class, 'refundReceipt'])->name('private-visits.refund-receipt');
+    Route::get('private-visits/getSpecializations', [PrivateVisitController::class, 'getSpecializations'])->name('private-visits.get-specializations');
+    Route::get('private-visits/getServiceSpecializations', [PrivateVisitController::class, 'getServiceSpecializations'])->name('private-visits.get-service-specializations');
+    Route::resource('private-visits', PrivateVisitController::class);
     Route::resource('services', ServiceController::class);
     Route::resource('type-specializations', TypeSpecializationController::class);
     
@@ -173,10 +199,16 @@ Route::group(['middleware' => ['auth']], function () {
     
     // Private Wing routes
 
+});
+
+// جعل route جلب المؤسسات متاح للجميع مؤقتًا للاختبار
+Route::post('/getInstitutions', [PrivateWingController::class, 'getInstitutions'])->name('getInstitutions');
+
+Route::group(['middleware' => ['auth']], function () {
     Route::post('/getSpecializations', [PrivateWingController::class, 'getSpecializations'])->name('getSpecializations');
-    Route::post('/getInstitutions', [PrivateWingController::class, 'getInstitutions'])->name('getInstitutions');
-    Route::post('/getServicePrice', [PrivateWingController::class, 'getServicePrice'])->name('getServicePrice');
-    
+    Route::post('/getServicePrice', [PrivateWingController::class, 'getServicePrice'])->name('getServicePrice');    // إضافة مسار جديد لجلب الخدمات الخاصة بالتخصص الفرعي
+    Route::post('/getServiceSpecializations', [PrivateWingController::class, 'getServiceSpecializations'])
+        ->name('getServiceSpecializations');    
     // Backup routes
     Route::get('backup', [App\Http\Controllers\BackupController::class, 'index'])->name('backup.index');
     Route::get('backup/test', function() {
@@ -204,6 +236,8 @@ Route::group(['middleware' => ['auth']], function () {
     // Private Wing Details routes
     Route::get('private-wing-details', [PrivateWingDetailsController::class, 'index'])->name('private-wing-details.index');
     Route::get('private-wing-details/export', [PrivateWingDetailsController::class, 'export'])->name('private-wing-details.export');
+    Route::get('private-visit-details', [PrivateVisitDetailsController::class, 'index'])->name('private-visit-details.index');
+    Route::get('private-visit-details/export', [PrivateVisitDetailsController::class, 'export'])->name('private-visit-details.export');
 
     // Operation Fees routes
     Route::get('operation-fees', [App\Http\Controllers\OperationFeesController::class, 'index'])->name('operation-fees.index');

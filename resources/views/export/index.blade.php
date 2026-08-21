@@ -226,10 +226,14 @@
                                     <i class="fas fa-eye"></i>
                                     معاينة البيانات
                                 </button>
-                                <button type="submit" id="exportBtn" class="btn btn-export">
-                                    <i class="fas fa-download"></i>
-                                    تصدير إلى Excel
-                                </button>
+                                @if(auth()->user()->hasRole('موظف الأجنحة الخاصة'))
+                                    {{-- لا يظهر زر التصدير لموظف الأجنحة الخاصة --}}
+                                @else
+                                    <button type="submit" id="exportBtn" class="btn btn-export">
+                                        <i class="fas fa-download"></i>
+                                        تصدير إلى Excel
+                                    </button>
+                                @endif
                             </div>
                         </form>
                     </div>

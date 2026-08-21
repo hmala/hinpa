@@ -14,7 +14,10 @@ class PrivateWing extends Model
     protected $fillable = [
         'hospital',
         'health_department',
+        'moh_id',
+        'fck_id',
         'patient_name',
+        'patient_phone',
         'patient_nationality',
         'sequential_number',
         'annual_number',
@@ -23,7 +26,9 @@ class PrivateWing extends Model
         'table_number',
         'patient_type',
         'entry_date',
+        'entry_time',
         'exit_date',
+        'exit_time',
         'days_count',
         'patient_bed_fee',
         'companion_bed_fee',
@@ -37,6 +42,8 @@ class PrivateWing extends Model
         'receipt_date',
         'total_amount',
         'is_insured',
+        'exception_from',
+        'exception_percentage',
         'refund_amount',
         'refund_status',
         'cancellation_reason',
@@ -46,9 +53,12 @@ class PrivateWing extends Model
 
     protected $casts = [
         'entry_date' => 'date',
+        'entry_time' => 'datetime:H:i',
         'exit_date' => 'date',
+        'exit_time' => 'datetime:H:i',
         'receipt_date' => 'date',
         'cancelled_at' => 'datetime',
+        'is_insured' => 'boolean',
         'patient_bed_fee' => 'decimal:2',
         'companion_bed_fee' => 'decimal:2',
         'nutrition_fee' => 'decimal:2',
@@ -57,7 +67,9 @@ class PrivateWing extends Model
         'xray_fees' => 'decimal:2',
         'sonar_fees' => 'decimal:2',
         'deposit_amount' => 'decimal:2',
-        'total_amount' => 'decimal:2'    ];
+        'total_amount' => 'decimal:2',
+        'refund_amount' => 'decimal:2'
+    ];
 
     /**
      * علاقة مع خدمات الجناح الخاص
@@ -66,6 +78,22 @@ class PrivateWing extends Model
         return $this->belongsToMany(Service_Specialization::class, 'private_wing_services', 'private_wing_id', 'service_id')
                     ->withPivot('service_fee', 'is_daily', 'total_amount')
                     ->withTimestamps();
+    }
+
+    /**
+     * علاقة مع دائرة الصحة
+     */
+    public function moh()
+    {
+        return $this->belongsTo(Mohs::class, 'moh_id');
+    }
+
+    /**
+     * علاقة مع المؤسسة
+     */
+    public function fck()
+    {
+        return $this->belongsTo(Fck::class, 'fck_id');
     }
 
     /**

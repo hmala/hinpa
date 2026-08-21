@@ -73,12 +73,19 @@
 
 
                 @can('تصدير')
-                <a class="modal-effect btn btn-sm btn-primary" href="{{ url('export_invoices') }}"
-                    style="color:white"><i class="fas fa-file-download"></i>&nbsp;تصدير </a>
-
+                @if(auth()->user()->hasRole('موظف الأجنحة الخاصة'))
+                    {{-- لا يظهر زر التصدير لموظف الأجنحة الخاصة --}}
+                @else
+                    <a class="modal-effect btn btn-sm btn-primary" href="{{ url('export_invoices') }}"
+                        style="color:white"><i class="fas fa-file-download"></i>&nbsp;تصدير </a>
+                @endif
                 @endcan
             </div>
             <div class="card-body">
+                <div class="mb-3">
+                    <label for="casesSearchInput" class="font-weight-bold">بحث</label>
+                    <input type="text" id="casesSearchInput" class="form-control" placeholder="ابحث عن اسم المستشفى أو الشهر أو السنة أو أي بيانات أخرى...">
+                </div>
                 <div class="table-responsive">
                     <table id="example1" class="table key-buttons text-md-nowrap" data-page-length='50' style="text-align: center">
                         <thead>
@@ -236,6 +243,15 @@
         var modal = $(this)
         modal.find('.modal-body #invoice_id').val(invoice_id);
     })
+</script>
+<script>
+    $(document).ready(function() {
+        var casesTable = $('#example1').DataTable();
+        $('#casesSearchInput').on('keyup', function() {
+            casesTable.search(this.value).draw();
+        });
+        $('#example1_filter').hide();
+    });
 </script>
 
 

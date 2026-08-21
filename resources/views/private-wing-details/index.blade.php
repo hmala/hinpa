@@ -9,6 +9,12 @@
 <link href="{{ URL::asset('assets/plugins/datatable/css/responsive.bootstrap4.min.css') }}" rel="stylesheet" />
 <link href="{{ URL::asset('assets/plugins/datatable/css/jquery.dataTables.min.css') }}" rel="stylesheet">
 <link href="{{ URL::asset('assets/plugins/datatable/css/responsive.dataTables.min.css') }}" rel="stylesheet">
+<style>
+    select option {
+        color: #000 !important;
+        background-color: #fff !important;
+    }
+</style>
 @endsection
 @section('page-header')
 <!-- breadcrumb -->
@@ -32,7 +38,7 @@
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h2 class="mb-0">تفاصيل الأجنحة الخاصة</h2>
                     <div>
-                        <a href="{{ route('private-wing-details.export') }}" class="btn btn-success">
+                        <a href="{{ route('private-wing-details.export', request()->query()) }}" class="btn btn-success">
                             <i class="fas fa-download"></i> تصدير إلى Excel
                         </a>
                     </div>
@@ -94,6 +100,28 @@
                                     @endfor
                                 </select>
                             </div>
+                            @if(in_array("Admin", auth()->user()->roles_name) || in_array("mohst", auth()->user()->roles_name))
+                            <div class="col-md-3">
+                                <label for="moh_id" class="form-label">الدائرة</label>
+                                <select name="moh_id" id="moh_id" class="form-control">
+                                    <option value="">جميع الدوائر</option>
+                                    @foreach($availableMohs as $moh)
+                                    <option value="{{ $moh->id }}" {{ request('moh_id') == $moh->id ? 'selected' : '' }}>{{ $moh->mohname }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            @endif
+                            @if(in_array("Admin", auth()->user()->roles_name) || in_array("mohst", auth()->user()->roles_name) || auth()->user()->roles_name === ["stat-doh"])
+                            <div class="col-md-3">
+                                <label for="fck_id" class="form-label">المستشفى</label>
+                                <select name="fck_id" id="fck_id" class="form-control">
+                                    <option value="">جميع المستشفيات</option>
+                                    @foreach($availableFcks as $fck)
+                                    <option value="{{ $fck->id }}" data-moh-id="{{ $fck->moh_id }}" {{ request('fck_id') == $fck->id ? 'selected' : '' }}>{{ $fck->Fckname }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            @endif
                         </div>
                     </form>
 
@@ -178,4 +206,38 @@
 <script src="{{ URL::asset('assets/plugins/datatable/js/responsive.bootstrap4.min.js') }}"></script>
 <!--Internal  Datatable js -->
 <script src="{{ URL::asset('assets/js/table-data.js') }}"></script>
+
+<script>
+    $(document).ready(function() {
+        var $mohSelect = $('#moh_id');
+        var $fckSelect = $('#fck_id');
+        
+        if ($mohSelect.length && $fckSelect.length) {
+            var allOptions = $fckSelect.find('option').clone();
+            
+            function filterHospitals() {
+                var selectedMoh = $mohSelect.val();
+                var currentSelectedFck = $fckSelect.val();
+                
+                $fckSelect.empty();
+                
+                allOptions.each(function() {
+                    var optMohId = $(this).attr('data-moh-id');
+                    if (!$(this).val() || !selectedMoh || optMohId == selectedMoh) {
+                        $fckSelect.append($(this).clone());
+                    }
+                });
+                
+                if (currentSelectedFck && $fckSelect.find('option[value="'+currentSelectedFck+'"]').length) {
+                    $fckSelect.val(currentSelectedFck);
+                } else if (currentSelectedFck) {
+                    $fckSelect.val('');
+                }
+            }
+            
+            $mohSelect.on('change', filterHospitals);
+            filterHospitals();
+        }
+    });
+</script>
 @endsection

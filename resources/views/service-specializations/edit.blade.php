@@ -93,7 +93,7 @@
                         <div class="form-group row mb-3">
                             <label for="notes" class="col-md-4 col-form-label text-md-end">ملاحظات</label>
                             <div class="col-md-6">
-                                <textarea id="notes" class="form-control @error('notes') is-invalid @enderror" name="notes">{{ old('notes', $pivot->notes) }}</textarea>
+                                <textarea id="notes" class="form-control @error('notes') is-invalid @enderror" name="notes">{{ old('notes', $pivotData->notes) }}</textarea>
                                 @error('notes')
                                     <span class="invalid-feedback" role="alert">
                                         <strong>{{ $message }}</strong>
