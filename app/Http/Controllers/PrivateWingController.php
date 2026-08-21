@@ -105,9 +105,7 @@ class PrivateWingController extends Controller
         $userMohId = $currentUser->mohcode;
         $userFckId = $currentUser->fckid;
 
-        $activeFckIds = \Illuminate\Support\Facades\DB::table('private_wings')->select('fck_id')
-            ->union(\Illuminate\Support\Facades\DB::table('private_visits')->select('fck_id'))
-            ->pluck('fck_id');
+        $activeFckIds = \Illuminate\Support\Facades\DB::table('private_wings')->select('fck_id')->pluck('fck_id');
 
         if (in_array("Admin", $currentUser->roles_name) || in_array("mohst", $currentUser->roles_name)) {
             $availableFcks = \App\Models\Fck::whereIn('id', $activeFckIds)->get();
