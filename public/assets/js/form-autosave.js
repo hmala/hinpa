@@ -65,7 +65,11 @@
                     if (Array.isArray(data)) {
                         $.each(data, function(key, item) {
                             var value = typeof item === 'object' ? item[settings.valueField] : item;
-                            var text = typeof item === 'object' ? item[settings.textField] : item;
+                            var text = typeof settings.formatText === 'function'
+                                ? settings.formatText(item, key)
+                                : (typeof settings.textField === 'function'
+                                    ? settings.textField(item, key)
+                                    : (typeof item === 'object' ? item[settings.textField] : item));
                             $(targetSelect).append('<option value="' + value + '">' + text + '</option>');
                         });
                     } else if (typeof data === 'object') {
@@ -101,7 +105,11 @@
                             if (Array.isArray(data)) {
                                 $.each(data, function(key, item) {
                                     var value = typeof item === 'object' ? item[settings.valueField] : item;
-                                    var text = typeof item === 'object' ? item[settings.textField] : item;
+                                    var text = typeof settings.formatText === 'function'
+                                        ? settings.formatText(item, key)
+                                        : (typeof settings.textField === 'function'
+                                            ? settings.textField(item, key)
+                                            : (typeof item === 'object' ? item[settings.textField] : item));
                                     $(targetSelect).append('<option value="' + value + '">' + text + '</option>');
                                 });
                             }

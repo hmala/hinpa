@@ -79,7 +79,8 @@ class PrivateWingDetailsController extends Controller
                 'entry_date',
                 'exit_date',
                 'days_count',
-                'is_insured'
+                'is_insured',
+                'interest_amount'
             ]);
 
         // تطبيق قيود الصلاحيات والبحث حسب الدائرة والمستشفى

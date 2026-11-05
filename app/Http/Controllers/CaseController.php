@@ -37,18 +37,38 @@ class CaseController extends Controller
         return view('cases.index', compact('cases','mohs','fck'));
     }
 
+    /**
+     * جلب معرفات الاختصاصات المستثناة من احتساب الأسرة المهيئة (الطوارئ والكلية الاصطناعية / الصناعية)
+     */
+    private function getExcludedBedIds()
+    {
+        return \DB::table('rdhs')
+            ->where('Spcuname', 'طوارئ')
+            ->orWhere('Spcuname', 'like', '%الكلية%اصطناعية%')
+            ->orWhere('Spcuname', 'like', '%الكلية%صناعية%')
+            ->pluck('id')
+            ->toArray();
+    }
+
     // إنشاء حالة جديدة
     public function create(Request $request)
     {
         $month = $request->input('month');
         $year = $request->input('year');
+        $calculatedTotal = 0;
     
         // التحقق من توفر القيم قبل تنفيذ الاستعلام
+        if ($month && $year) {
+            $excludedIds = $this->getExcludedBedIds();
+
             $calculatedTotal = pations::where('month', $month)
                 ->where('year', $year)
                 ->where('fck_id', Auth::user()->fckid)
+                ->when(!empty($excludedIds), function ($query) use ($excludedIds) {
+                    return $query->whereNotIn('spebed', $excludedIds);
+                })
                 ->sum('bedm');
-        
+        }
     
         return view('cases.create', compact('calculatedTotal', 'month', 'year'));
     }
@@ -75,13 +95,14 @@ class CaseController extends Controller
     
         // حساب مجموع الأسرة قبل التخزين
         $emergencyId = \DB::table('rdhs')->where('Spcuname', 'طوارئ')->value('id');
+        $excludedIds = $this->getExcludedBedIds();
         
-        // حساب الأسرة المهيئة (بدون الطوارئ)
+        // حساب الأسرة المهيئة (بدون الطوارئ والكلية الصناعية)
         $tbedsmoh = Pations::where('month', $validatedData['month'])
             ->where('year', $validatedData['year'])
             ->where('fck_id', Auth::user()->fckid)
-            ->when($emergencyId, function($query) use ($emergencyId) {
-                return $query->where('spebed', '!=', $emergencyId);
+            ->when(!empty($excludedIds), function($query) use ($excludedIds) {
+                return $query->whereNotIn('spebed', $excludedIds);
             })
             ->sum('bedm');
         
@@ -133,13 +154,14 @@ public function edit($id)
     
     // جلب id اختصاص الطوارئ من جدول rdhs
     $emergencyId = \DB::table('rdhs')->where('Spcuname', 'طوارئ')->value('id');
+    $excludedIds = $this->getExcludedBedIds();
     
-    // جلب عدد الأسرة المهيئة من جدول pations عدا أسرة الطوارئ
+    // جلب عدد الأسرة المهيئة من جدول pations عدا أسرة الطوارئ والكلية الصناعية
     $tbedsmoh = Pations::where('month', $case->month)
         ->where('year', $case->year)
         ->where('fck_id', $case->fck_id)
-        ->when($emergencyId, function($query) use ($emergencyId) {
-            return $query->where('spebed', '!=', $emergencyId);
+        ->when(!empty($excludedIds), function($query) use ($excludedIds) {
+            return $query->whereNotIn('spebed', $excludedIds);
         })
         ->sum('bedm');
     
@@ -179,13 +201,15 @@ public function edit($id)
         'tbedsf' => 'required|integer',
      ]);
 
-     // حساب عدد الأسرة المهيئة من جدول pations عدا أسرة الطوارئ
+     // حساب عدد الأسرة المهيئة من جدول pations عدا أسرة الطوارئ والكلية الصناعية
      $emergencyId = \DB::table('rdhs')->where('Spcuname', 'طوارئ')->value('id');
+     $excludedIds = $this->getExcludedBedIds();
+
      $tbedsmoh = Pations::where('month', $validatedData['month'])
          ->where('year', $validatedData['year'])
          ->where('fck_id', $case->fck_id)
-         ->when($emergencyId, function($query) use ($emergencyId) {
-             return $query->where('spebed', '!=', $emergencyId);
+         ->when(!empty($excludedIds), function($query) use ($excludedIds) {
+             return $query->whereNotIn('spebed', $excludedIds);
          })
          ->sum('bedm');
      
@@ -223,14 +247,14 @@ public function edit($id)
  public function getBedsTotal($month, $year)
 {
     $fck_id = Auth::user()->fckid;
-    $emergencyId = \DB::table('rdhs')->where('Spcuname', 'طوارئ')->value('id');
+    $excludedIds = $this->getExcludedBedIds();
 
-    // حساب مجموع الأسرة المهيئة من جدول pations عدا أسرّة الطوارئ
+    // حساب مجموع الأسرة المهيئة من جدول pations عدا أسرّة الطوارئ والكلية الصناعية
     $totalBeds = Pations::where('month', $month)
         ->where('year', $year)
         ->where('fck_id', $fck_id)
-        ->when($emergencyId, function ($query) use ($emergencyId) {
-            return $query->where('spebed', '!=', $emergencyId);
+        ->when(!empty($excludedIds), function ($query) use ($excludedIds) {
+            return $query->whereNotIn('spebed', $excludedIds);
         })
         ->sum('bedm');
 

@@ -105,9 +105,9 @@
                         <a href="{{ route('private-wings.export', request()->query()) }}" class="btn btn-primary ms-2">
                             <i class="fas fa-file-excel"></i> تصدير Excel
                         </a>
-                        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#selectPatientTypeModal">
+                        <a href="{{ route('private-wings.create', ['clear' => 1]) }}" class="btn btn-primary">
                             <i class="fas fa-plus"></i> إضافة جديد
-                        </button>
+                        </a>
                         <a href="{{ route('private-wings.trashed') }}" class="btn btn-warning ms-2">
                             <i class="fas fa-archive"></i> عرض المبطلات
                         </a>
@@ -175,18 +175,11 @@
                        <table id="example1" class="table key-buttons text-md-nowrap" data-page-length='20' style="text-align: center">
                             <thead>
                                 <tr>
-                                    <th>#</th>
-                                    <th>اسم المريض</th>
-                                    <th>رقم الهاتف</th>
-                                    <th>جنسية المريض</th>
-                                    <th>نوع المريض</th>
-                                    <th>المستشفى</th>
-                                    <th>الترقيم السنوي</th>
-                                   <th>تاريخ الدخول</th>
-                                    <th>تاريخ الخروج</th>
-                                    <th>حالة الدفع</th>
-                                    <th>الحالة</th>
-                                    <th>الإجراءات</th>
+                                    <th style="width: 5%">#</th>
+                                    <th style="width: 25%">المريض</th>
+                                    <th style="width: 30%">بيانات الإقامة والمستشفى</th>
+                                    <th style="width: 20%">الحالة المالية</th>
+                                    <th style="width: 20%">الإجراءات</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -206,71 +199,87 @@
                                 @endphp
                                 <tr class="{{ $hasRefundPayment ? 'table-info' : ($hasDebt ? 'table-danger' : ($hasRefund ? 'table-success' : ($wing->cancelled_at ? 'table-warning' : ''))) }}">
                                     <td>{{ $loop->iteration }}</td>
-                                    <td>{{ $wing->patient_name }}</td>
-                                    <td>{{ $wing->patient_phone ?: '-' }}</td>
-                                    <td>{{ $wing->patient_nationality ?: '-' }}</td>
-                                    <td>
-                                        @if(($wing->patient_type ?? 'inpatient') == 'outpatient')
-                                            <span class="badge badge-success">غير راقد</span>
-                                        @else
-                                            <span class="badge badge-primary">راقد</span>
-                                        @endif
+                                    <td class="text-right">
+                                        <strong class="text-dark fs-15">{{ $wing->patient_name }}</strong>
+                                        <div class="text-muted small mt-1">
+                                            <span><i class="fas fa-phone-alt ml-1 text-primary"></i>{{ $wing->patient_phone ?: '-' }}</span>
+                                            <span class="mx-1">|</span>
+                                            <span><i class="fas fa-flag ml-1 text-secondary"></i>{{ $wing->patient_nationality ?: 'عراقي' }}</span>
+                                        </div>
                                     </td>
-                                    <td>{{ $wing->hospital }}</td>
-                                    <td><span class="badge badge-primary">سنوي: {{ $wing->annual_number }}/{{ $wing->fiscal_year }}</span></td>
-                                    <td>
-                                        {{ $wing->entry_date }}
-                                        @if($wing->entry_time)
-                                            <br><small>{{ $wing->entry_time }}</small>
-                                        @endif
-                                    </td>
-                                    <td>
-                                        {{ $wing->exit_date }}
-                                        @if($wing->exit_time)
-                                            <br><small>{{ $wing->exit_time }}</small>
-                                        @endif
+                                    <td class="text-right">
+                                        <div class="mb-1">
+                                            <span class="badge badge-primary">سنوي: {{ $wing->annual_number }}/{{ $wing->fiscal_year }}</span>
+                                            @if(($wing->patient_type ?? 'inpatient') == 'outpatient')
+                                                <span class="badge badge-success">غير راقد</span>
+                                            @else
+                                                <span class="badge badge-info">راقد</span>
+                                            @endif
+                                            @if(($wing->exception_percentage ?? 0) > 0)
+                                                <span class="badge" style="background-color: #6f42c1; color: white;" title="جهة الاستثناء: {{ $wing->exception_from }}">
+                                                    <i class="fas fa-percent"></i> استثناء {{ (float)$wing->exception_percentage }}%
+                                                </span>
+                                                @if($wing->exception_attachment)
+                                                    <a href="{{ asset($wing->exception_attachment) }}" target="_blank" class="badge badge-dark text-white" title="عرض كتاب الاستثناء">
+                                                        <i class="fas fa-paperclip"></i> كتاب الاستثناء
+                                                    </a>
+                                                @endif
+                                            @endif
+                                            @if($wing->cancelled_at)
+                                                <span class="badge badge-warning" title="{{ $wing->cancellation_reason }}">ملغى</span>
+                                            @endif
+                                        </div>
+                                        <div class="text-muted small">
+                                            <span><i class="fas fa-hospital ml-1 text-danger"></i>{{ $wing->hospital }}</span>
+                                            <br>
+                                            <span><i class="far fa-calendar-alt ml-1 text-info"></i>دخول: {{ $wing->entry_date }} {{ $wing->entry_time }}</span>
+                                            @if($wing->exit_date)
+                                                <span class="mr-2"><i class="far fa-calendar-check ml-1 text-success"></i>خروج: {{ $wing->exit_date }} {{ $wing->exit_time }}</span>
+                                            @endif
+                                        </div>
                                     </td>
                                     <td>
                                         @if($hasRefundPayment)
                                             @if($remainingAfterRefund > 0)
-                                                <span class="badge badge-success">تم استرداد {{ number_format($refundedAmount, 0) }} د.ع - الباقي له {{ number_format($remainingAfterRefund, 0) }} د.ع</span>
+                                                <span class="badge badge-success d-block p-2 mb-1">تم استرداد {{ number_format($refundedAmount, 0) }} د.ع<br>الباقي له {{ number_format($remainingAfterRefund, 0) }} د.ع</span>
                                             @elseif($remainingAfterRefund < 0)
-                                                <span class="badge badge-warning">تم استرداد {{ number_format($refundedAmount, 0) }} د.ع - عليه {{ number_format(abs($remainingAfterRefund), 0) }} د.ع</span>
+                                                <span class="badge badge-warning d-block p-2 mb-1">تم استرداد {{ number_format($refundedAmount, 0) }} د.ع<br>عليه {{ number_format(abs($remainingAfterRefund), 0) }} د.ع</span>
                                             @else
-                                                <span class="badge badge-info">تم استرداد {{ number_format($refundedAmount, 0) }} د.ع - مسدد بالكامل</span>
+                                                <span class="badge badge-info d-block p-2 mb-1">تم استرداد {{ number_format($refundedAmount, 0) }} د.ع - مسدد</span>
                                             @endif
                                         @elseif($hasDebt)
-                                            <span class="badge badge-danger">يحتاج تسديد {{ number_format(abs($remainingAfterRefund), 0) }} د.ع</span>
+                                            <span class="badge badge-danger d-block p-2 mb-1">يحتاج تسديد: {{ number_format(abs($remainingAfterRefund), 0) }} د.ع</span>
                                         @elseif($hasRefund)
-                                            <span class="badge badge-success">له مبلغ {{ number_format($remainingAfterRefund, 0) }} د.ع</span>
+                                            <span class="badge badge-success d-block p-2 mb-1">له مبلغ: {{ number_format($remainingAfterRefund, 0) }} د.ع</span>
                                         @else
-                                            <span class="badge badge-info">مدفوع بالكامل</span>
+                                            <span class="badge badge-success-light d-block p-2 mb-1 text-success font-weight-bold">مدفوع بالكامل</span>
                                         @endif
                                     </td>
                                     <td>
-                                        @if($wing->cancelled_at)
-                                            <span class="badge badge-warning" title="{{ $wing->cancellation_reason }}">ملغى</span>
-                                        @else
-                                            <span class="badge badge-success">نشط</span>
-                                        @endif
-                                    </td>
-                                    <td>
-                                        <a href="{{ route('private-wings.show', $wing) }}" class="btn btn-info btn-sm">عرض</a>
-                                        @if(!$wing->cancelled_at)
-                                            <a href="{{ route('private-wings.edit', $wing) }}" class="btn btn-primary btn-sm">تعديل</a>
-                                            @if($hasRefund && ($wing->refund_amount ?? 0) > 0)
-                                                <a href="{{ route('private-wings.refund-receipt', $wing->id) }}" class="btn btn-success btn-sm" target="_blank">
-                                                    <i class="fas fa-receipt"></i> وصل
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <a href="{{ route('private-wings.show', $wing) }}" class="btn btn-info" title="عرض التفاصيل">
+                                                <i class="fas fa-eye"></i> عرض
+                                            </a>
+                                            @if(!$wing->cancelled_at)
+                                                <a href="{{ route('private-wings.edit', $wing) }}" class="btn btn-primary" title="تعديل">
+                                                    <i class="fas fa-edit"></i> تعديل
                                                 </a>
-                                            @elseif($hasRefund)
-                                                <button type="button" class="btn btn-success btn-sm" data-toggle="modal" data-target="#refundModal{{ $wing->id }}">
-                                                    <i class="fas fa-hand-holding-usd"></i> استرداد
+                                                @if($hasRefund && ($wing->refund_amount ?? 0) > 0)
+                                                    <a href="{{ route('private-wings.refund-receipt', $wing->id) }}" class="btn btn-success" target="_blank" title="وصل استرداد">
+                                                        <i class="fas fa-receipt"></i> وصل
+                                                    </a>
+                                                @elseif($hasRefund)
+                                                    <button type="button" class="btn btn-success" data-toggle="modal" data-target="#refundModal{{ $wing->id }}" title="استرداد">
+                                                        <i class="fas fa-hand-holding-usd"></i> استرداد
+                                                    </button>
+                                                @endif
+                                                <button type="button" class="btn btn-warning" onclick="openCancelModal({{ $wing->id }}, '{{ $wing->patient_name }}')" title="إبطال">
+                                                    <i class="fas fa-ban"></i> إبطال
                                                 </button>
+                                            @else
+                                                <span class="badge badge-secondary p-2">مبطل</span>
                                             @endif
-                                            <button type="button" class="btn btn-warning btn-sm" onclick="openCancelModal({{ $wing->id }}, '{{ $wing->patient_name }}')">إبطال</button>
-                                        @else
-                                            <span class="text-muted">مبطل</span>
-                                        @endif
+                                        </div>
                                     </td>
                                 </tr>
                                 @endforeach
@@ -344,7 +353,7 @@
                             <label for="statistical_number" class="form-label">الرقم الإحصائي</label>
                             <input type="text" class="form-control" id="statistical_number" name="statistical_number" value="{{ request('statistical_number') }}" placeholder="ابحث بالرقم الإحصائي">
                         </div>
-                        @if(in_array("Admin", auth()->user()->roles_name) || in_array("mohst", auth()->user()->roles_name))
+                        @if((in_array("Admin", auth()->user()->roles_name) || in_array("mohst", auth()->user()->roles_name)) && isset($availableMohs))
                         <div class="col-md-6">
                             <label for="moh_id" class="form-label">الدائرة</label>
                             <select class="form-control" id="moh_id" name="moh_id">
@@ -355,7 +364,7 @@
                             </select>
                         </div>
                         @endif
-                        @if(in_array("Admin", auth()->user()->roles_name) || in_array("mohst", auth()->user()->roles_name) || auth()->user()->roles_name === ["stat-doh"])
+                        @if((in_array("Admin", auth()->user()->roles_name) || in_array("mohst", auth()->user()->roles_name) || auth()->user()->roles_name === ["stat-doh"]) && isset($availableFcks))
                         <div class="col-md-6">
                             <label for="fck_id" class="form-label">المستشفى</label>
                             <select class="form-control" id="fck_id" name="fck_id">

@@ -6,6 +6,7 @@ use App\Models\Service;
 use App\Models\TypeSpecialization;
 use App\Models\Service_Specialization;
 use App\Models\PrivateWing;
+
 use App\Models\PrivateWingService;
 use App\Models\PrivateWingReceipt;
 use App\Models\PrivateWingRefund;
@@ -102,22 +103,16 @@ class PrivateWingController extends Controller
         $currentUser = Auth::user();
         $query = PrivateWing::query();
 
-        $userMohId = $currentUser->mohcode;
-        $userFckId = $currentUser->fckid;
-
-        $activeFckIds = \Illuminate\Support\Facades\DB::table('private_wings')->select('fck_id')->pluck('fck_id');
-
+        // تطبيق قيود الصلاحيات حسب نوع المستخدم
         if (in_array("Admin", $currentUser->roles_name) || in_array("mohst", $currentUser->roles_name)) {
-            $availableFcks = \App\Models\Fck::whereIn('id', $activeFckIds)->get();
-            $availableMohs = \App\Models\Mohs::all();
+            // Admin/mohst: عرض كل الأجنحة
+            // لا حاجة لفلترة
         } elseif ($currentUser->roles_name === ["stat-doh"]) {
-            $availableFcks = \App\Models\Fck::where('moh_id', $userMohId)->whereIn('id', $activeFckIds)->get();
-            $availableMohs = \App\Models\Mohs::where('id', $userMohId)->get();
+            // stat-doh: عرض أجنحة الدائرة فقط
+            $query->where('moh_id', $currentUser->mohcode);
         } else {
-            $availableFcks = \App\Models\Fck::where('id', $userFckId)->get();
-            $availableMohs = \App\Models\Mohs::where('id', $userMohId)->get();
-            
-            $query->where('fck_id', $userFckId);
+            // مستخدمو المؤسسات: عرض أجنحة المؤسسة فقط
+            $query->where('fck_id', $currentUser->fckid);
         }
 
         // إذا لم يتم تحديد حالة، أظهر فقط النشطة
@@ -138,26 +133,6 @@ class PrivateWingController extends Controller
         // فلترة حسب الترقيم التسلسلي (باركود)
         if ($request->filled('sequential_number')) {
             $query->where('sequential_number', $request->sequential_number);
-        }
-
-        // فلترة حسب الهاتف
-        if ($request->filled('patient_phone')) {
-            $query->where('patient_phone', 'like', '%' . $request->patient_phone . '%');
-        }
-
-        // فلترة حسب نوع المريض
-        if ($request->filled('patient_type')) {
-            $query->where('patient_type', $request->patient_type);
-        }
-
-        // فلترة حسب الترقيم السنوي
-        if ($request->filled('annual_number')) {
-            $query->where('annual_number', $request->annual_number);
-        }
-
-        // فلترة حسب الرقم الإحصائي
-        if ($request->filled('statistical_number')) {
-            $query->where('statistical_number', 'like', '%' . $request->statistical_number . '%');
         }
 
         // فلترة حسب تاريخ تنظيم الاستمارة
@@ -183,8 +158,24 @@ class PrivateWingController extends Controller
         $privateWings = $query->orderBy('entry_date', 'desc')->paginate(10)->appends($request->query());
         $debtWingsCount = PrivateWing::whereNull('cancelled_at')->where('deposit_amount', '<', DB::raw('total_amount'))->count();
 
-        return view('private-wings.index', compact('privateWings', 'debtWingsCount', 'availableFcks', 'availableMohs'));
-    }    public function create()
+        // المؤسسات والدوائر المتاحة لمودال البحث المتقدم
+        $userMohId = $currentUser->mohcode;
+        $userFckId = $currentUser->fckid;
+        if (in_array("Admin", $currentUser->roles_name) || in_array("mohst", $currentUser->roles_name)) {
+            $availableFcks = \App\Models\Fck::all();
+            $availableMohs = \App\Models\Mohs::all();
+        } elseif ($currentUser->roles_name === ["stat-doh"]) {
+            $availableFcks = \App\Models\Fck::where('moh_id', $userMohId)->get();
+            $availableMohs = \App\Models\Mohs::where('id', $userMohId)->get();
+        } else {
+            $availableFcks = \App\Models\Fck::where('id', $userFckId)->get();
+            $availableMohs = \App\Models\Mohs::where('id', $userMohId)->get();
+        }
+
+        return view('private-wings.index', compact('privateWings', 'debtWingsCount', 'availableMohs', 'availableFcks'));
+    }
+
+    public function create()
     {
     $currentUser = Auth::user();
     $typeSpecializations = TypeSpecialization::all();
@@ -290,28 +281,33 @@ class PrivateWingController extends Controller
         // للتأكد من البيانات المرسلة
         Log::info('Request data:', $request->all());
 
-        $validated = $request->validate([
+        $exceptionPercentage = floatval($request->input('exception_percentage', 0));
+
+        $rules = [
             'hospital' => 'required|string|max:255',
             'health_department' => 'required|string|max:255',
             'moh_id' => 'required|exists:mohs,id',
             'fck_id' => 'required|exists:fcks,id',
             'patient_name' => 'required|string|max:255',
-            'patient_type' => 'required|in:inpatient,outpatient',
             'patient_nationality' => 'nullable|string|max:255',
             'is_insured' => 'nullable|boolean',
-            'statistical_number' => 'nullable|string|max:255',
+            'exception_from' => 'nullable|string|max:255',
+            'exception_percentage' => 'nullable|numeric|min:0|max:100',
+            'exception_attachment' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
+            'statistical_number' => 'required|string|max:255',
             'entry_date' => 'required|date',
             'entry_time' => 'nullable|date_format:H:i',
             'exit_date' => 'nullable|date',
             'exit_time' => 'nullable|date_format:H:i',
             'days_count' => 'required|integer',
-            'deposits' => 'required|array|min:1',
+            'interest_amount' => 'nullable|numeric|min:0',
+            'deposits' => $exceptionPercentage >= 100 ? 'nullable|array' : 'nullable|array',
             'deposits.*.amount' => 'required|numeric|min:0',
             'deposits.*.number' => 'required|string|max:255',
             'deposits.*.date' => 'required|date',
             'deposits.*.payment_type' => 'required|in:كاش,إلكتروني',
-            'deposits.*.interest_rate' => 'required|numeric|min:0|max:100',
-            'deposits.*.interest_amount' => 'required|numeric|min:0',
+            'deposits.*.interest_rate' => 'nullable|numeric|min:0|max:100',
+            'deposits.*.interest_amount' => 'nullable|numeric|min:0',
             'services' => 'required|array',
             'services.*.id' => 'required|exists:service_specialization,id',
             'services.*.fee' => 'required|numeric',
@@ -320,7 +316,9 @@ class PrivateWingController extends Controller
             'services.*.insurance_percentage' => 'required|numeric|min:0|max:100',
             'services.*.doctor_id' => 'nullable|exists:doctors,id',
             'services.*.operation_degree' => 'nullable|string|max:255'
-        ]);
+        ];
+
+        $validated = $request->validate($rules);
         
         // التحقق من صلاحيات المستخدم
         $currentUser = Auth::user();
@@ -341,6 +339,19 @@ class PrivateWingController extends Controller
         try {
             DB::beginTransaction();
 
+            // معالجة رفع كتاب الاستثناء
+            $attachmentPath = null;
+            if ($request->hasFile('exception_attachment')) {
+                $file = $request->file('exception_attachment');
+                $fileName = 'exception_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                $destinationPath = public_path('attachments/exceptions');
+                if (!file_exists($destinationPath)) {
+                    mkdir($destinationPath, 0777, true);
+                }
+                $file->move($destinationPath, $fileName);
+                $attachmentPath = 'attachments/exceptions/' . $fileName;
+            }
+
             // توليد الترقيم السنوي والتسلسلي تلقائياً داخل الـ transaction مع قفل
             $fckId = $validated['fck_id'];
             $currentYear = date('Y');
@@ -359,9 +370,9 @@ class PrivateWingController extends Controller
                 ->lockForUpdate()
                 ->first();
 
-            // helper to compute hotel-style days count based on times
-            // inserted here just before creating private wing
             $nextSequentialNumber = $lastSequential ? ((int)$lastSequential->sequential_number + 1) : 1;
+
+            $interestAmount = floatval($validated['interest_amount'] ?? 0);
 
             // إنشاء سجل الجناح الخاص
             $privateWing = PrivateWing::create([
@@ -370,7 +381,6 @@ class PrivateWingController extends Controller
                 'moh_id' => $validated['moh_id'],
                 'fck_id' => $validated['fck_id'],
                 'patient_name' => $validated['patient_name'],
-                'patient_type' => $validated['patient_type'],
                 'patient_nationality' => $validated['patient_nationality'] ?? null,
                 'annual_number' => $nextAnnualNumber,
                 'fiscal_year' => $currentYear,
@@ -386,36 +396,36 @@ class PrivateWingController extends Controller
                                     $validated['exit_date'] ?? null,
                                     $validated['exit_time'] ?? null
                                  ),
-                'is_insured' => $validated['is_insured'] ?? false
+                'is_insured' => $validated['is_insured'] ?? false,
+                'exception_from' => $validated['exception_from'] ?? null,
+                'exception_percentage' => $exceptionPercentage,
+                'exception_attachment' => $attachmentPath,
+                'interest_amount' => $interestAmount,
+                'interest_rate' => 0
             ]);
 
-            // إضافة وصولات التأمين
+            // إضافة وصولات التأمين إن وجدت
             $totalDeposits = 0;
-            foreach ($validated['deposits'] as $deposit) {
-                $privateWing->receipts()->create([
-                    'amount' => $deposit['amount'],
-                    'receipt_number' => $deposit['number'],
-                    'receipt_date' => $deposit['date'],
-                    'payment_type' => $deposit['payment_type'],
-                    'interest_rate' => $deposit['interest_rate'],
-                    'interest_amount' => $deposit['interest_amount']
-                ]);
-                $totalDeposits += $deposit['amount'] + $deposit['interest_amount'];
+            if (!empty($validated['deposits'])) {
+                foreach ($validated['deposits'] as $deposit) {
+                    $depositAmount = floatval($deposit['amount']);
+                    $privateWing->receipts()->create([
+                        'amount' => $depositAmount,
+                        'receipt_number' => $deposit['number'],
+                        'receipt_date' => $deposit['date'],
+                        'payment_type' => $deposit['payment_type'],
+                        'interest_rate' => 0,
+                        'interest_amount' => 0
+                    ]);
+                    $totalDeposits += $depositAmount;
+                }
             }
             
-            // تحديث إجمالي التأمينات في الجناح
-            $privateWing->update([
-                'deposit_amount' => $totalDeposits
-            ]);
             $totalAmount = 0;
             // إضافة الخدمات وتسجيل المعلومات للتأكد من البيانات
             Log::info('Adding services:', $validated['services']);
             
             foreach ($validated['services'] as $service) {
-                Log::info('Processing service:', $service);
-                Log::info('doctor_id value:', ['value' => $service['doctor_id']]);
-                Log::info('doctor_id type:', ['type' => gettype($service['doctor_id'])]);
-                
                 $serviceAmount = $service['is_daily'] ? 
                     $service['fee'] * $validated['days_count'] : 
                     $service['fee'];
@@ -434,26 +444,12 @@ class PrivateWingController extends Controller
                 }
                   
                 try {
-                    // تسجيل البيانات للتأكد من صحتها
-                    Log::info('Creating service with data:', [
-                        'private_wing_id' => $privateWing->id,
-                        'service_id' => $service['id'],
-                        'service_fee' => $service['fee'],
-                        'is_daily' => $service['is_daily'],
-                        'is_insured' => $service['is_insured'],
-                        'total_amount' => $serviceAmount,
-                        'patient_amount' => $patientAmount,
-                        'insurance_amount' => $insuranceAmount
-                    ]);
-                    
                     $serviceSpecialization = Service_Specialization::find($service['id']);
                     $serviceName = $serviceSpecialization ? ($serviceSpecialization->namesv ?? '') : '';
 
                     // معالجة doctor_id - السماح بقيمة null للطبيب لجميع الخدمات
                     $doctorId = !empty($service['doctor_id']) && $service['doctor_id'] !== 'null' ? $service['doctor_id'] : null;
 
-                    Log::info('doctor_id after processing:', ['processed' => $doctorId, 'serviceName' => $serviceName]);
-                    
                     // إنشاء سجل الخدمة باستخدام DB facade
                     $result = DB::table('private_wing_services')->insert([
                         'private_wing_id' => $privateWing->id,
@@ -471,8 +467,6 @@ class PrivateWingController extends Controller
                         'updated_at' => now()
                     ]);
                     
-                    Log::info('Service saved successfully:', ['result' => $result]);
-                    
                     // إضافة مبلغ المريض فقط إلى المجموع الكلي
                     $totalAmount += $patientAmount;
                 } catch (\Exception $e) {
@@ -481,8 +475,18 @@ class PrivateWingController extends Controller
                 }
             }
 
-            // تحديث المبلغ الإجمالي (مبلغ المريض فقط)
-            $privateWing->update(['total_amount' => $totalAmount]);
+            // تطبيق نسبة الاستثناء على إجمالي خدمات المريض
+            if ($exceptionPercentage > 0) {
+                $totalAmount = $totalAmount * (1 - $exceptionPercentage / 100);
+            }
+
+            // تحديث المبلغ الإجمالي المطلوب (مبلغ المريض بعد الاستثناء + مبلغ الفائدة اليدوي) وإجمالي التأمينات
+            $grandTotal = $totalAmount + $interestAmount;
+            $privateWing->update([
+                'total_amount' => $grandTotal,
+                'deposit_amount' => $totalDeposits,
+                'interest_amount' => $interestAmount
+            ]);
 
             DB::commit();
 
@@ -569,7 +573,7 @@ class PrivateWingController extends Controller
         $doctors = \App\Models\Doctor::where('fck_id', $currentUser->fckid)->get();
         
         // جلب الخدمات باستخدام العلاقة
-        $services = $privateWing->privateWingServices()
+         $services = $privateWing->privateWingServices()
             ->join('service_specialization as ss', 'private_wing_services.service_id', '=', 'ss.id')
             ->leftJoin('doctors as d', 'private_wing_services.doctor_id', '=', 'd.id')
             ->select(
@@ -593,28 +597,33 @@ class PrivateWingController extends Controller
         return view('private-wings.edit', compact('privateWing','typeSpecializations', 'services', 'doctors'));
     }    public function update(Request $request, PrivateWing $privateWing)
     {
+        $exceptionPercentage = floatval($request->input('exception_percentage', 0));
+
         $validated = $request->validate([
             'hospital' => 'required|string|max:255',
             'health_department' => 'required|string|max:255',
             'patient_name' => 'required|string|max:255',
-            'patient_type' => 'required|in:inpatient,outpatient',
             'patient_nationality' => 'nullable|string|max:255',
             'is_insured' => 'nullable|boolean',
+            'exception_from' => 'nullable|string|max:255',
+            'exception_percentage' => 'nullable|numeric|min:0|max:100',
+            'exception_attachment' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
             'annual_number' => 'required|integer',
             'fiscal_year' => 'required|integer',
-            'statistical_number' => 'nullable|string|max:255',
+            'statistical_number' => 'required|string|max:255',
             'entry_date' => 'required|date',
             'entry_time' => 'nullable|date_format:H:i',
             'exit_date' => 'nullable|date',
             'exit_time' => 'nullable|date_format:H:i',
             'days_count' => 'required|integer',
+            'interest_amount' => 'nullable|numeric|min:0',
             'deposits' => 'nullable|array',
             'deposits.*.amount' => 'required|numeric|min:0',
             'deposits.*.number' => 'required|string|max:255',
             'deposits.*.date' => 'required|date',
             'deposits.*.payment_type' => 'required|in:كاش,إلكتروني',
-            'deposits.*.interest_rate' => 'required|numeric|min:0|max:100',
-            'deposits.*.interest_amount' => 'required|numeric|min:0',
+            'deposits.*.interest_rate' => 'nullable|numeric|min:0|max:100',
+            'deposits.*.interest_amount' => 'nullable|numeric|min:0',
             'services' => 'required|array',
             'services.*.id' => 'required|exists:service_specialization,id',
             'services.*.fee' => 'required|numeric',
@@ -628,12 +637,25 @@ class PrivateWingController extends Controller
         try {
             DB::beginTransaction();
 
+            $attachmentPath = $privateWing->exception_attachment;
+            if ($request->hasFile('exception_attachment')) {
+                $file = $request->file('exception_attachment');
+                $fileName = 'exception_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                $destinationPath = public_path('attachments/exceptions');
+                if (!file_exists($destinationPath)) {
+                    mkdir($destinationPath, 0777, true);
+                }
+                $file->move($destinationPath, $fileName);
+                $attachmentPath = 'attachments/exceptions/' . $fileName;
+            }
+
+            $interestAmount = floatval($validated['interest_amount'] ?? $privateWing->interest_amount ?? 0);
+
             // تحديث بيانات الجناح الخاص
             $privateWing->update([
                 'hospital' => $validated['hospital'],
                 'health_department' => $validated['health_department'],
                 'patient_name' => $validated['patient_name'],
-                'patient_type' => $validated['patient_type'],
                 'patient_nationality' => $validated['patient_nationality'] ?? null,
                 'annual_number' => $validated['annual_number'],
                 'fiscal_year' => $validated['fiscal_year'],
@@ -648,7 +670,12 @@ class PrivateWingController extends Controller
                                     $validated['exit_date'] ?? null,
                                     $validated['exit_time'] ?? null
                                  ),
-                'is_insured' => $validated['is_insured'] ?? false
+                'is_insured' => $validated['is_insured'] ?? false,
+                'exception_from' => $validated['exception_from'] ?? null,
+                'exception_percentage' => $exceptionPercentage,
+                'exception_attachment' => $attachmentPath,
+                'interest_amount' => $interestAmount,
+                'interest_rate' => 0
             ]);
 
             // حساب عدد الأيام إذا لم يتم تحديثها
@@ -661,11 +688,6 @@ class PrivateWingController extends Controller
                     );
                     $privateWing->update(['days_count' => $daysCount]);
                 }
-            // لا نحذف الوصولات المحذوفة - نحافظ على الوصولات الموجودة
-            // if ($request->filled('deleted_receipts')) {
-            //     $deletedReceiptIds = explode(',', $request->deleted_receipts);
-            //     \App\Models\PrivateWingReceipt::whereIn('id', $deletedReceiptIds)->delete();
-            // }
 
             // حذف الخدمات القديمة وإعادة إنشائها
             $privateWing->privateWingServices()->delete();
@@ -715,33 +737,34 @@ class PrivateWingController extends Controller
                 $totalAmount += $patientAmount;
             }
 
+            // تطبيق نسبة الاستثناء
+            if ($exceptionPercentage > 0) {
+                $totalAmount = $totalAmount * (1 - $exceptionPercentage / 100);
+            }
+
             // إضافة وصولات جديدة فقط
             if (isset($validated['deposits']) && is_array($validated['deposits'])) {
                 foreach ($validated['deposits'] as $deposit) {
-                    // جميع الوصولات المرسلة هي جديدة (لا يتم إرسال الوصولات القديمة)
-                    $interestRate = $deposit['payment_type'] === 'كاش' ? 5.00 : 0.00;
-                    $interestAmount = ($deposit['amount'] * $interestRate) / 100;
-
                     \App\Models\PrivateWingReceipt::create([
                         'private_wing_id' => $privateWing->id,
                         'receipt_number' => $deposit['number'],
                         'amount' => $deposit['amount'],
                         'receipt_date' => $deposit['date'],
                         'payment_type' => $deposit['payment_type'],
-                        'interest_rate' => $interestRate,
-                        'interest_amount' => $interestAmount,
+                        'interest_rate' => 0,
+                        'interest_amount' => 0,
                     ]);
                 }
             }
 
             // تحديث المجاميع
-            $totalDeposits = $privateWing->receipts->sum(function($receipt) {
-                return $receipt->amount + $receipt->interest_amount;
-            });
+            $totalDeposits = $privateWing->receipts()->sum('amount');
+            $grandTotal = $totalAmount + $interestAmount;
 
             $privateWing->update([
-                'total_amount' => $totalAmount,
-                'deposit_amount' => $totalDeposits
+                'total_amount' => $grandTotal,
+                'deposit_amount' => $totalDeposits,
+                'interest_amount' => $interestAmount
             ]);
 
             DB::commit();
@@ -792,7 +815,11 @@ class PrivateWingController extends Controller
                 return response()->json([], 400);
             }
 
-            $services = \App\Models\Service_Specialization::where('service_id', $serviceId)
+            $service = Service::find($serviceId);
+            $sercode = $service ? $service->sercode : $serviceId;
+
+            $services = \App\Models\Service_Specialization::where('service_id', $sercode)
+                ->orWhere('service_id', $serviceId)
                 ->get();
 
             return response()->json($services);
@@ -1025,29 +1052,10 @@ class PrivateWingController extends Controller
         return view('private-wings.refund-receipt', compact('privateWing', 'latestRefund'));
     }
 
+
     public function export(Request $request)
     {
-        $currentUser = Auth::user();
-        $userMohId = $currentUser->mohcode;
-        $userFckId = $currentUser->fckid;
-
         $query = PrivateWing::query();
-
-        if (in_array("Admin", $currentUser->roles_name) || in_array("mohst", $currentUser->roles_name)) {
-            if ($request->filled('moh_id')) {
-                $query->where('moh_id', $request->moh_id);
-            }
-            if ($request->filled('fck_id')) {
-                $query->where('fck_id', $request->fck_id);
-            }
-        } elseif ($currentUser->roles_name === ["stat-doh"]) {
-            $query->where('moh_id', $userMohId);
-            if ($request->filled('fck_id')) {
-                $query->where('fck_id', $request->fck_id);
-            }
-        } else {
-            $query->where('fck_id', $userFckId);
-        }
 
         // نفس الفلاتر من index
         if (!$request->filled('status')) {

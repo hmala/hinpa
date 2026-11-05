@@ -185,6 +185,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('private-visits/{visit}/refund-receipt', [PrivateVisitController::class, 'refundReceipt'])->name('private-visits.refund-receipt');
     Route::get('private-visits/getSpecializations', [PrivateVisitController::class, 'getSpecializations'])->name('private-visits.get-specializations');
     Route::get('private-visits/getServiceSpecializations', [PrivateVisitController::class, 'getServiceSpecializations'])->name('private-visits.get-service-specializations');
+    Route::get('private-visits/getServicePrice', [PrivateVisitController::class, 'getServicePrice'])->name('private-visits.get-service-price');
     Route::resource('private-visits', PrivateVisitController::class);
     Route::resource('services', ServiceController::class);
     Route::resource('type-specializations', TypeSpecializationController::class);
@@ -238,6 +239,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('private-wing-details/export', [PrivateWingDetailsController::class, 'export'])->name('private-wing-details.export');
     Route::get('private-visit-details', [PrivateVisitDetailsController::class, 'index'])->name('private-visit-details.index');
     Route::get('private-visit-details/export', [PrivateVisitDetailsController::class, 'export'])->name('private-visit-details.export');
+    Route::get('private-visit-details/print', [PrivateVisitDetailsController::class, 'printReport'])->name('private-visit-details.print');
 
     // Operation Fees routes
     Route::get('operation-fees', [App\Http\Controllers\OperationFeesController::class, 'index'])->name('operation-fees.index');

@@ -66,7 +66,7 @@ class PrivateVisitController extends Controller
     public function index(Request $request)
     {
         $currentUser = Auth::user();
-        $query = PrivateVisit::query();
+        $query = PrivateVisit::with(['serviceSpecialization', 'doctor']);
 
         if (in_array("Admin", $currentUser->roles_name) || in_array("mohst", $currentUser->roles_name)) {
             // Admin/mohst: عرض كل الزيارات
@@ -113,7 +113,8 @@ class PrivateVisitController extends Controller
         $privateVisits = $query->orderBy('visit_date', 'desc')->paginate(10)->appends($request->query());
         $debtVisitsCount = PrivateVisit::whereNull('cancelled_at')->where('deposit_amount', '<', DB::raw('total_amount'))->count();
 
-        return view('private-visits.index', compact('privateVisits', 'debtVisitsCount'));
+        $visits = $privateVisits;
+        return view('private-visits.index', compact('privateVisits', 'visits', 'debtVisitsCount'));
     }
 
     public function create()
@@ -558,7 +559,14 @@ class PrivateVisitController extends Controller
             if (!$serviceId) {
                 return response()->json([], 400);
             }
-            $services = \App\Models\Service_Specialization::where('service_id', $serviceId)->get();
+            $service = Service::where('id', $serviceId)->orWhere('sercode', $serviceId)->first();
+            $sercode = $service ? $service->sercode : $serviceId;
+            $serviceDbId = $service ? $service->id : $serviceId;
+
+            $services = \App\Models\Service_Specialization::where('service_id', $sercode)
+                ->orWhere('service_id', $serviceDbId)
+                ->orderBy('namesv', 'asc')
+                ->get();
             return response()->json($services);
         } catch (\Exception $e) {
             Log::error('Error fetching service specializations (visits): ' . $e->getMessage());
@@ -729,7 +737,7 @@ class PrivateVisitController extends Controller
 
     public function export(Request $request)
     {
-        $query = PrivateVisit::query();
+        $query = PrivateVisit::with(['serviceSpecialization', 'doctor']);
 
         if (!$request->filled('status')) {
             $query->whereNull('cancelled_at');
@@ -767,6 +775,6 @@ class PrivateVisitController extends Controller
 
         $privateVisits = $query->orderBy('created_at', 'desc')->get();
 
-        return \Excel::download(new \App\Exports\PrivateVisitsExport($privateVisits), 'private-visits-' . date('Y-m-d') . '.xlsx');
+        return \Excel::download(new \App\Exports\PrivateVisitDetailsExport($request), 'تقرير_الزيارات_الخارجية_' . date('Y-m-d') . '.xlsx');
     }
 }

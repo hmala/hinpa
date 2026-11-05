@@ -140,14 +140,27 @@
                                     @endforeach
                                     <th style="text-align: right;"><i class="fas fa-money-bill-wave"></i> أجور الأطباء</th>
                                     <th style="text-align: right;"><i class="fas fa-user-md"></i> الأطباء</th>
-                                    <th style="text-align: right;"><i class="fas fa-percentage"></i> 5% رسوم عملية</th>
+                                    <th style="text-align: right;"><i class="fas fa-coins"></i> مبلغ الفائدة</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @forelse($privateWings as $wing)
                                 <tr>
                                     <td>{{ $wing->id }}</td>
-                                    <td>{{ $wing->patient_name }}</td>
+                                    <td>
+                                        <strong>{{ $wing->patient_name }}</strong>
+                                        @if(($wing->exception_percentage ?? 0) > 0)
+                                            <br>
+                                            <span class="badge" style="background-color: #6f42c1; color: white; font-size: 11px;" title="{{ $wing->exception_from }}">
+                                                استثناء {{ (float)$wing->exception_percentage }}%
+                                            </span>
+                                            @if($wing->exception_attachment)
+                                                <a href="{{ asset($wing->exception_attachment) }}" target="_blank" class="text-primary mr-1" title="كتاب الاستثناء">
+                                                    <i class="fas fa-paperclip"></i>
+                                                </a>
+                                            @endif
+                                        @endif
+                                    </td>
                                     <td>{{ $wing->file_number }}</td>
                                     <td>{{ $wing->deposit_amount == floor($wing->deposit_amount) ? number_format($wing->deposit_amount, 0) : number_format($wing->deposit_amount, 2) }}</td>
                                     <td>{{ $wing->total_amount == floor($wing->total_amount) ? number_format($wing->total_amount, 0) : number_format($wing->total_amount, 2) }}</td>
@@ -168,7 +181,7 @@
                                     @endforeach
                                     <td>{{ $wing->total_amount == floor($wing->total_amount) ? number_format($wing->total_amount, 0) : number_format($wing->total_amount, 2) }}</td>
                                     <td>{{ $doctors ?: '-' }}</td>
-                                    <td>{{ ($wing->total_amount * 0.05) == floor($wing->total_amount * 0.05) ? number_format($wing->total_amount * 0.05, 0) : number_format($wing->total_amount * 0.05, 2) }}</td>
+                                    <td>{{ ($wing->interest_amount ?? 0) == floor($wing->interest_amount ?? 0) ? number_format($wing->interest_amount ?? 0, 0) : number_format($wing->interest_amount ?? 0, 2) }}</td>
                                 </tr>
                                 @empty
                                 <tr>

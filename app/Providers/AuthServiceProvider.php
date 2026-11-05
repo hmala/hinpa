@@ -2,7 +2,7 @@
 
 namespace App\Providers;
 
-// use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 
 class AuthServiceProvider extends ServiceProvider
@@ -25,6 +25,12 @@ class AuthServiceProvider extends ServiceProvider
     {
         $this->registerPolicies();
 
-        //
+        // Grant all permissions to Admin
+        Gate::before(function ($user, $ability) {
+            $roles = is_array($user->roles_name) ? $user->roles_name : (is_string($user->roles_name) ? json_decode($user->roles_name, true) : []);
+            if ((is_array($roles) && in_array('Admin', $roles)) || (method_exists($user, 'hasRole') && $user->hasRole('Admin'))) {
+                return true;
+            }
+        });
     }
 }

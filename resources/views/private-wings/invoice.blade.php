@@ -146,13 +146,19 @@
                     }
                 }
                 
-                // حساب الإيداعات
-                $totalDeposits = $privateWing->receipts->sum('amount');
-                $totalInterest = $privateWing->receipts->sum('interest_amount');
-                $totalDepositsWithInterest = $totalDeposits + $totalInterest;
+                $exceptionDiscount = 0;
+                if (($privateWing->exception_percentage ?? 0) > 0) {
+                    $exceptionDiscount = $totalPatient * ($privateWing->exception_percentage / 100);
+                    $totalPatient = $totalPatient - $exceptionDiscount;
+                }
                 
-                // المعادلة: المبلغ المتبقي = مبلغ الوصولات (بدون فائدة) - مبلغ المريض
-                $remaining = $totalDeposits - $totalPatient;
+                // حساب الفائدة والمجموع الكلي المطلوب والوصولات
+                $interestAmount = $privateWing->interest_amount ?? 0;
+                $grandTotal = $totalPatient + $interestAmount;
+                $totalDeposits = $privateWing->receipts->sum('amount');
+                
+                // المعادلة: المبلغ المتبقي = إجمالي الوصولات - المجموع الكلي المطلوب
+                $remaining = $totalDeposits - $grandTotal;
             @endphp
 
             <tr class="total">
@@ -163,7 +169,7 @@
             @if($privateWing->is_insured)
             <tr class="item">
                 <td colspan="{{ $privateWing->is_insured ? 8 : 4 }}">مبلغ المريض</td>
-                <td>{{ number_format($totalPatient, 0) }} د.ع</td>
+                <td>{{ number_format($totalPatient + $exceptionDiscount, 0) }} د.ع</td>
             </tr>
             <tr class="item">
                 <td colspan="{{ $privateWing->is_insured ? 8 : 4 }}">مبلغ الضمان</td>
@@ -171,24 +177,33 @@
             </tr>
             @endif
 
+            @if(($privateWing->exception_percentage ?? 0) > 0)
+            <tr class="item" style="background-color: #f8f0ff;">
+                <td colspan="{{ $privateWing->is_insured ? 8 : 4 }}">نسبة الاستثناء ({{ $privateWing->exception_from ?: 'استثناء رسمي' }}) - {{ (float)$privateWing->exception_percentage }}%</td>
+                <td style="color: #6f42c1; font-weight: bold;">-{{ number_format($exceptionDiscount, 0) }} د.ع</td>
+            </tr>
+            @endif
+
+            @if($interestAmount > 0)
             <tr class="item">
-                <td colspan="{{ $privateWing->is_insured ? 8 : 4 }}">إجمالي الوصولات (بدون فائدة)</td>
+                <td colspan="{{ $privateWing->is_insured ? 8 : 4 }}">مبلغ الفائدة المضاف</td>
+                <td>{{ number_format($interestAmount, 0) }} د.ع</td>
+            </tr>
+            @endif
+
+            <tr class="item" style="font-weight: bold; background: #f8f9fa;">
+                <td colspan="{{ $privateWing->is_insured ? 8 : 4 }}">المجموع الكلي المطلوب</td>
+                <td>{{ number_format($grandTotal, 0) }} د.ع</td>
+            </tr>
+
+            <tr class="item">
+                <td colspan="{{ $privateWing->is_insured ? 8 : 4 }}">إجمالي وصولات التأمين</td>
                 <td>{{ number_format($totalDeposits, 0) }} د.ع</td>
-            </tr>
-            
-            <tr class="item">
-                <td colspan="{{ $privateWing->is_insured ? 8 : 4 }}">إجمالي الفائدة</td>
-                <td>{{ number_format($totalInterest, 0) }} د.ع</td>
-            </tr>
-            
-            <tr class="item">
-                <td colspan="{{ $privateWing->is_insured ? 8 : 4 }}">إجمالي الإيداعات (مع الفائدة)</td>
-                <td>{{ number_format($totalDepositsWithInterest, 0) }} د.ع</td>
             </tr>
 
             <tr class="total">
                 <td colspan="{{ $privateWing->is_insured ? 8 : 4 }}">المبلغ المتبقي</td>
-                <td>{{ number_format(abs($remaining), 0) }} د.ع {{ $remaining < 0 ? '(عليه)' : ($remaining > 0 ? '(له)' : '') }}</td>
+                <td>{{ number_format(abs($remaining), 0) }} د.ع {{ $remaining < 0 ? '(عليه)' : ($remaining > 0 ? '(له / استرداد)' : '(خالص)') }}</td>
             </tr>
         </table>
 
@@ -197,21 +212,19 @@
             <h4>وصولات التأمين:</h4>
             <table style="width: 100%; border-collapse: collapse;">
                 <tr style="background: #eee; border: 1px solid #ddd;">
-                    <th style="border: 1px solid #ddd; padding: 5px;">#</th>
+                    <th style="border: 1px solid #ddd; padding: 5px; text-align: center;">#</th>
                     <th style="border: 1px solid #ddd; padding: 5px;">رقم الوصل</th>
-                    <th style="border: 1px solid #ddd; padding: 5px;">المبلغ</th>
+                    <th style="border: 1px solid #ddd; padding: 5px;">المبلغ (د.ع)</th>
                     <th style="border: 1px solid #ddd; padding: 5px;">التاريخ</th>
-                    <th style="border: 1px solid #ddd; padding: 5px;">النوع</th>
-                    <th style="border: 1px solid #ddd; padding: 5px;">الفائدة</th>
+                    <th style="border: 1px solid #ddd; padding: 5px;">نوع الدفع</th>
                 </tr>
                 @foreach($privateWing->receipts as $index => $receipt)
                 <tr>
                     <td style="border: 1px solid #ddd; padding: 5px; text-align: center;">{{ $index + 1 }}</td>
                     <td style="border: 1px solid #ddd; padding: 5px;">{{ $receipt->receipt_number }}</td>
                     <td style="border: 1px solid #ddd; padding: 5px;">{{ number_format($receipt->amount, 0) }}</td>
-                    <td style="border: 1px solid #ddd; padding: 5px;">{{ $receipt->receipt_date->format('Y-m-d') }}</td>
+                    <td style="border: 1px solid #ddd; padding: 5px;">{{ $receipt->receipt_date ? $receipt->receipt_date->format('Y-m-d') : '' }}</td>
                     <td style="border: 1px solid #ddd; padding: 5px;">{{ $receipt->payment_type }}</td>
-                    <td style="border: 1px solid #ddd; padding: 5px;">{{ number_format($receipt->interest_amount, 0) }}</td>
                 </tr>
                 @endforeach
             </table>

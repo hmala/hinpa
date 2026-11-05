@@ -72,23 +72,29 @@
 					</li>
 					@endcan
 					
-					@can('الأجنحة الخاصة')
+					@php
+						$user = Auth::user();
+						$userRoles = is_array($user->roles_name ?? null) ? $user->roles_name : (is_string($user->roles_name ?? null) ? json_decode($user->roles_name, true) : []);
+						$isAdmin = (is_array($userRoles) && in_array('Admin', $userRoles)) || ($user && method_exists($user, 'hasRole') && $user->hasRole('Admin'));
+						$hasWingAccess = $isAdmin || ($user && ($user->can('الأجنحة الخاصة') || $user->can('الاجنحة') || $user->can('اجنحة') || $user->hasRole('مشرف عام الأجنحة الخاصة') || $user->hasRole('موظف الأجنحة الخاصة')));
+					@endphp
+					@if($hasWingAccess)
 					<li class="slide">
 						<a class="side-menu__item" data-toggle="slide" href="{{ url('/' . $page='#') }}"><svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" viewBox="0 0 24 24"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M19 5H5v14h14V5zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z" opacity=".3"/><path d="M3 5v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2zm2 0h14v14H5V5zm2 5h2v7H7zm4-3h2v10h-2zm4 6h2v4h-2z"/></svg><span class="side-menu__label">الأجنحة الخاصة</span><i class="angle fe fe-chevron-down"></i></a>
 						<ul class="slide-menu">
 							<li><a class="slide-item" href="{{ url('/' . $page='private-wings') }}">قائمة الأجنحة الخاصة</a></li>
-							{{-- <li><a class="slide-item" href="{{ route('private-visits.index') }}">زيارات الأجنحة الخاصة</a></li> --}}
-							@can('تفاصيل الأجنحة الخاصة')
+							<li><a class="slide-item" href="{{ route('private-visits.index') }}">حسابات الزيارات الخارجية</a></li>
+							@if($isAdmin || ($user && ($user->can('تفاصيل الأجنحة الخاصة') || $user->can('الاجنحة') || $user->can('اجنحة') || $user->hasRole('مشرف عام الأجنحة الخاصة'))))
 							<li><a class="slide-item" href="{{ route('private-wing-details.index') }}">تفاصيل الأجنحة الخاصة</a></li>
 							<li><a class="slide-item" href="{{ route('private-visit-details.index') }}">تفاصيل وصولات الزيارات</a></li>
 							<li><a class="slide-item" href="{{ route('receipts.index') }}">الوصولات</a></li>
 							<li><a class="slide-item" href="{{ route('operation-fees.index') }}">أجور العمليات</a></li>
 							<li><a class="slide-item" href="{{ route('invoices.index') }}">الفواتير</a></li>
 							<li><a class="slide-item" href="{{ route('doctors.index') }}">الأطباء</a></li>
+							@endif
 						</ul>
 					</li>
-					@endcan
-						@endcan
+					@endif
 
 					<li class="side-item side-item-category">ألتقارير</li>
 					@php

@@ -16,3 +16,11 @@ yarn-error.log
 /.fleet
 /.idea
 /.vscode
+/public/attachments/*
+!/public/attachments/.gitkeep
+/storage/uploads/*
+!/storage/uploads/.gitkeep
+/storage/fonts/*.json
+.graphify_detect.json
+/app/graphify-out/
+resources/views/private-visits.zip

@@ -77,7 +77,8 @@ class PrivateWingDetailsExport implements FromCollection, WithHeadings, WithStyl
                 'entry_date',
                 'exit_date',
                 'days_count',
-                'is_insured'
+                'is_insured',
+                'interest_amount'
             ])->orderBy('created_at', 'desc');
 
         if (in_array("Admin", $currentUser->roles_name) || in_array("mohst", $currentUser->roles_name)) {
@@ -146,8 +147,8 @@ class PrivateWingDetailsExport implements FromCollection, WithHeadings, WithStyl
             $doctors = $wing->privateWingServices->pluck('doctor.name')->filter()->unique()->implode(', ');
             $row['الأطباء'] = $doctors ?: '-';
 
-            // إضافة 5% رسوم عملية
-            $row['5% رسوم عملية'] = number_format($wing->total_amount * 0.05, 2);
+            // إضافة مبلغ الفائدة
+            $row['مبلغ الفائدة'] = $wing->interest_amount ?? 0;
 
             $data[] = $row;
         }
@@ -176,8 +177,8 @@ class PrivateWingDetailsExport implements FromCollection, WithHeadings, WithStyl
         }
         $headings[] = 'الأطباء';
 
-        // إضافة 5% رسوم عملية
-        $headings[] = '5% رسوم عملية';
+        // إضافة مبلغ الفائدة
+        $headings[] = 'مبلغ الفائدة';
 
         return $headings;
     }

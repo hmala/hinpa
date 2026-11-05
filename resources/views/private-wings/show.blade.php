@@ -320,6 +320,27 @@
                     @endif
                 </td>
             </tr>
+            @if(($privateWing->exception_percentage ?? 0) > 0)
+            <tr>
+                <th>نسبة الاستثناء</th>
+                <td>
+                    <span class="badge badge-purple" style="background-color: #6f42c1; color: #fff; font-size: 13px;">{{ (float)$privateWing->exception_percentage }}%</span>
+                    @if($privateWing->exception_from)
+                        <span class="text-muted mr-1">({{ $privateWing->exception_from }})</span>
+                    @endif
+                </td>
+                <th>كتاب الاستثناء</th>
+                <td>
+                    @if($privateWing->exception_attachment)
+                        <a href="{{ asset($privateWing->exception_attachment) }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-file-download"></i> عرض / تحميل كتاب الاستثناء
+                        </a>
+                    @else
+                        <span class="text-muted">لا يوجد مرفق</span>
+                    @endif
+                </td>
+            </tr>
+            @endif
         </table>
     </div>
 
@@ -328,14 +349,11 @@
         <table class="invoice-table">
             <thead>
                 <tr>
-                    <th>#</th>
+                    <th style="width: 50px;">#</th>
                     <th>رقم الوصل</th>
-                    <th>المبلغ</th>
+                    <th>المبلغ (د.ع)</th>
                     <th>التاريخ</th>
-                    <th>النوع</th>
-                    <th>النسبة (%)</th>
-                    <th>الفائدة</th>
-                    <th>الإجمالي</th>
+                    <th>نوع الدفع</th>
                 </tr>
             </thead>
             <tbody>
@@ -344,11 +362,8 @@
                     <td>{{ $index + 1 }}</td>
                     <td>{{ $receipt->receipt_number }}</td>
                     <td>{{ number_format($receipt->amount, 0) }}</td>
-                    <td>{{ $receipt->receipt_date->format('Y-m-d') }}</td>
+                    <td>{{ $receipt->receipt_date ? $receipt->receipt_date->format('Y-m-d') : '' }}</td>
                     <td>{{ $receipt->payment_type }}</td>
-                    <td>{{ number_format($receipt->interest_rate, 2) }}</td>
-                    <td>{{ number_format($receipt->interest_amount, 0) }}</td>
-                    <td>{{ number_format($receipt->amount + $receipt->interest_amount, 0) }}</td>
                 </tr>
                 @endforeach
             </tbody>
@@ -360,9 +375,9 @@
         <table class="invoice-table">
             @php
                 // حساب إجمالي الخدمات
-                $totalServices = $privateWing->total_amount;
+                $totalServices = $totalAmount;
                 
-                // حساب مبلغ المريض
+                // حساب مبلغ المريض ومبلغ الضمان
                 $totalPatientAmount = 0;
                 $totalInsuranceAmount = 0;
                 
@@ -375,13 +390,19 @@
                     }
                 }
                 
-                // حساب الإيداعات والفوائد
-                $totalDeposits = $privateWing->receipts->sum('amount');
-                $totalInterest = $privateWing->receipts->sum('interest_amount');
-                $totalDepositsWithInterest = $totalDeposits + $totalInterest;
+                $exceptionDiscount = 0;
+                if (($privateWing->exception_percentage ?? 0) > 0) {
+                    $exceptionDiscount = $totalPatientAmount * ($privateWing->exception_percentage / 100);
+                    $totalPatientAmount = $totalPatientAmount - $exceptionDiscount;
+                }
                 
-                // المعادلة: المبلغ المتبقي = مبلغ الوصولات (بدون فائدة) - مبلغ المريض
-                $remaining = $totalDeposits - $totalPatientAmount;
+                // حساب الفائدة والمجموع الكلي المطلوب والوصولات
+                $interestAmount = $privateWing->interest_amount ?? 0;
+                $grandTotal = $totalPatientAmount + $interestAmount;
+                $totalDeposits = $privateWing->receipts->sum('amount');
+                
+                // المعادلة: المبلغ المتبقي = إجمالي الوصولات - المجموع الكلي المطلوب
+                $remaining = $totalDeposits - $grandTotal;
             @endphp
             
             <tr>
@@ -391,24 +412,32 @@
             @if($privateWing->is_insured)
             <tr>
                 <th>مبلغ المريض</th>
-                <td class="text-right"><strong>{{ number_format($totalPatientAmount, 0) }} د.ع</strong></td>
+                <td class="text-right"><strong>{{ number_format($totalPatientAmount + $exceptionDiscount, 0) }} د.ع</strong></td>
             </tr>
             <tr>
                 <th>مبلغ الضمان</th>
                 <td class="text-right"><strong>{{ number_format($totalInsuranceAmount, 0) }} د.ع</strong></td>
             </tr>
             @endif
+            @if(($privateWing->exception_percentage ?? 0) > 0)
+            <tr style="background-color: #f8f0ff;">
+                <th>الاستثناء الرسمي ({{ $privateWing->exception_from ?: 'استثناء' }})</th>
+                <td class="text-right"><strong style="color: #6f42c1;">خصم {{ (float)$privateWing->exception_percentage }}% (-{{ number_format($exceptionDiscount, 0) }} د.ع)</strong></td>
+            </tr>
+            @endif
+            @if($interestAmount > 0)
             <tr>
-                <th>إجمالي الوصولات (بدون فائدة)</th>
+                <th>مبلغ الفائدة المضاف</th>
+                <td class="text-right"><strong>{{ number_format($interestAmount, 0) }} د.ع</strong></td>
+            </tr>
+            @endif
+            <tr style="background-color: #fcfcfc;">
+                <th>المجموع الكلي المطلوب</th>
+                <td class="text-right"><strong>{{ number_format($grandTotal, 0) }} د.ع</strong></td>
+            </tr>
+            <tr>
+                <th>إجمالي وصولات التأمين</th>
                 <td class="text-right"><strong>{{ number_format($totalDeposits, 0) }} د.ع</strong></td>
-            </tr>
-            <tr>
-                <th>إجمالي الفائدة</th>
-                <td class="text-right"><strong>{{ number_format($totalInterest, 0) }} د.ع</strong></td>
-            </tr>
-            <tr>
-                <th>إجمالي الإيداعات (مع الفائدة)</th>
-                <td class="text-right"><strong>{{ number_format($totalDepositsWithInterest, 0) }} د.ع</strong></td>
             </tr>
             <tr style="background-color: #f0f8ff;">
                 <th>المبلغ المتبقي</th>
@@ -418,7 +447,7 @@
                         @if($remaining < 0)
                             (عليه مبلغ)
                         @elseif($remaining > 0)
-                            (له مبلغ)
+                            (له مبلغ / استرداد)
                         @else
                             (مسدد)
                         @endif

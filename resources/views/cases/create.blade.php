@@ -239,6 +239,7 @@
                 .then(response => response.json())
                 .then(data => {
                     document.getElementById("tbedsmoh").value = data.totalBeds;
+                    calculateTotalBeds();
                 })
                 .catch(error => console.error("خطأ في جلب البيانات:", error));
         }
