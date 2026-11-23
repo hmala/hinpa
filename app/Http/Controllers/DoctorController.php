@@ -31,10 +31,43 @@ class DoctorController extends Controller
             } else {
                 $query->where('fck_id', $currentUser->fckid);
             }
+        } else {
+            if ($request->filled('moh_id')) {
+                $query->where('moh_id', $request->moh_id);
+            }
+            if ($request->filled('fck_id')) {
+                $query->where('fck_id', $request->fck_id);
+            }
         }
 
-        $doctors = $query->paginate(20);
-        return view('doctors.index', compact('doctors'));
+        // بحث شامل في قاعدة البيانات
+        if ($request->filled('search')) {
+            $search = trim($request->search);
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('job_title', 'like', "%{$search}%")
+                  ->orWhere('address', 'like', "%{$search}%")
+                  ->orWhereHas('moh', function($m) use ($search) {
+                      $m->where('mohname', 'like', "%{$search}%");
+                  })
+                  ->orWhereHas('fck', function($f) use ($search) {
+                      $f->where('Fckname', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        $doctors = $query->orderBy('name', 'asc')->paginate(20)->withQueryString();
+
+        $availableMohs = collect();
+        $availableFcks = collect();
+        if (in_array("Admin", $currentUser->roles_name) || in_array("mohst", $currentUser->roles_name)) {
+            $availableMohs = \App\Models\Moh::all();
+            $availableFcks = \App\Models\fck::all();
+        } elseif ($currentUser->roles_name === ["stat-doh"]) {
+            $availableFcks = \App\Models\fck::where('moh_id', $currentUser->mohcode)->get();
+        }
+
+        return view('doctors.index', compact('doctors', 'availableMohs', 'availableFcks'));
     }
 
     /**

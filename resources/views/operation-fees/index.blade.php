@@ -57,6 +57,10 @@
                                     <option value="كبرى" {{ request('operation_degree') == 'كبرى' ? 'selected' : '' }}>كبرى</option>
                                     <option value="متوسطة" {{ request('operation_degree') == 'متوسطة' ? 'selected' : '' }}>متوسطة</option>
                                     <option value="صغرى" {{ request('operation_degree') == 'صغرى' ? 'selected' : '' }}>صغرى</option>
+                                    <option value="مراقبة" {{ request('operation_degree') == 'مراقبة' ? 'selected' : '' }}>مراقبة</option>
+                                    <option value="تأجيل عملية" {{ request('operation_degree') == 'تأجيل عملية' ? 'selected' : '' }}>تأجيل عملية</option>
+                                    <option value="عملية شاملة" {{ request('operation_degree') == 'عملية شاملة' ? 'selected' : '' }}>عملية شاملة</option>
+                                    <option value="زراعة قوقعة" {{ request('operation_degree') == 'زراعة قوقعة' ? 'selected' : '' }}>زراعة قوقعة</option>
                                 </select>
                             </div>
                             <div class="col-md-2">

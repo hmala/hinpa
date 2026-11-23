@@ -28,22 +28,35 @@ class PrivateVisitDetailsController extends Controller
         $userRoles = is_array($currentUser->roles_name) ? $currentUser->roles_name : (is_string($currentUser->roles_name) ? json_decode($currentUser->roles_name, true) : []);
         $isAdmin = (is_array($userRoles) && in_array('Admin', $userRoles)) || $currentUser->hasRole('Admin') || (is_array($userRoles) && in_array('mohst', $userRoles));
 
-        // المؤسسات والدوائر المتاحة
-        if ($isAdmin) {
-            $availableFcks = Fck::all();
-            $availableMohs = Mohs::all();
-            $doctors = Doctor::all();
-        } elseif (is_array($userRoles) && in_array('stat-doh', $userRoles)) {
-            $availableFcks = Fck::where('moh_id', $userMohId)->get();
-            $availableMohs = Mohs::where('id', $userMohId)->get();
-            $doctors = Doctor::where('moh_id', $userMohId)->get();
-        } else {
-            $availableFcks = Fck::where('id', $userFckId)->get();
-            $availableMohs = Mohs::where('id', $userMohId)->get();
-            $doctors = Doctor::where('fck_id', $userFckId)->get();
+        // استعلام أساسي للسجلات المصرح بها للمستخدم
+        $baseVisitsQuery = PrivateVisit::query();
+        if (!$isAdmin) {
+            if (is_array($userRoles) && in_array('stat-doh', $userRoles)) {
+                $baseVisitsQuery->where('moh_id', $userMohId);
+            } else {
+                $baseVisitsQuery->where('fck_id', $userFckId);
+            }
         }
 
-        $services = Service_Specialization::all();
+        // جلب الدوائر والمؤسسات والأطباء المدخلة فعلياً فقط في سجلات الزيارات
+        $activeMohIds = (clone $baseVisitsQuery)->whereNotNull('moh_id')->distinct()->pluck('moh_id');
+        $activeFckIds = (clone $baseVisitsQuery)->whereNotNull('fck_id')->distinct()->pluck('fck_id');
+        $activeDoctorIds = (clone $baseVisitsQuery)->whereNotNull('doctor_id')->distinct()->pluck('doctor_id');
+
+        $availableMohs = Mohs::whereIn('id', $activeMohIds)->orderBy('mohname', 'asc')->get();
+        $availableFcks = Fck::whereIn('id', $activeFckIds)->orderBy('Fckname', 'asc')->get();
+        $doctors = Doctor::whereIn('id', $activeDoctorIds)->orderBy('name', 'asc')->get();
+
+        // جلب الخدمات المدخلة فعلياً فقط في سجلات الزيارات
+        $mainServiceIds = (clone $baseVisitsQuery)->whereNotNull('service_id')->distinct()->pluck('service_id');
+        $subServiceIds = \Illuminate\Support\Facades\DB::table('private_visit_services')
+            ->whereIn('private_visit_id', (clone $baseVisitsQuery)->select('id'))
+            ->whereNotNull('service_id')
+            ->distinct()
+            ->pluck('service_id');
+
+        $activeServiceIds = $mainServiceIds->merge($subServiceIds)->unique()->filter();
+        $services = Service_Specialization::whereIn('id', $activeServiceIds)->orderBy('namesv', 'asc')->get();
 
         $query = PrivateVisit::with(['serviceSpecialization', 'doctor']);
 
@@ -77,7 +90,13 @@ class PrivateVisitDetailsController extends Controller
             $query->where('doctor_id', $request->doctor_id);
         }
         if ($request->filled('service_id')) {
-            $query->where('service_id', $request->service_id);
+            $serviceId = $request->service_id;
+            $query->where(function($q) use ($serviceId) {
+                $q->where('service_id', $serviceId)
+                  ->orWhereHas('services', function($sq) use ($serviceId) {
+                      $sq->where('service_id', $serviceId);
+                  });
+            });
         }
         if ($request->filled('status')) {
             if ($request->status === 'active') {
@@ -119,6 +138,12 @@ class PrivateVisitDetailsController extends Controller
         $visits = $query->orderBy('id', 'desc')->paginate(25)->appends($request->query());
         $receipts = $visits;
 
+        $selectedServiceName = '';
+        if ($request->filled('service_id')) {
+            $serviceObj = Service_Specialization::find($request->service_id);
+            $selectedServiceName = $serviceObj ? $serviceObj->namesv : '';
+        }
+
         return view('private-visit-details.index', compact(
             'visits',
             'receipts',
@@ -132,7 +157,8 @@ class PrivateVisitDetailsController extends Controller
             'grandTotalAmount',
             'totalServiceFees',
             'dateFrom',
-            'dateTo'
+            'dateTo',
+            'selectedServiceName'
         ));
     }
 
@@ -186,7 +212,13 @@ class PrivateVisitDetailsController extends Controller
             $query->where('doctor_id', $request->doctor_id);
         }
         if ($request->filled('service_id')) {
-            $query->where('service_id', $request->service_id);
+            $serviceId = $request->service_id;
+            $query->where(function($q) use ($serviceId) {
+                $q->where('service_id', $serviceId)
+                  ->orWhereHas('services', function($sq) use ($serviceId) {
+                      $sq->where('service_id', $serviceId);
+                  });
+            });
         }
         if ($request->filled('status')) {
             if ($request->status === 'active') {
@@ -244,6 +276,12 @@ class PrivateVisitDetailsController extends Controller
             $mohName = $currentUser->moh->mohname ?? '';
         }
 
+        $selectedServiceName = '';
+        if ($request->filled('service_id')) {
+            $serviceObj = Service_Specialization::find($request->service_id);
+            $selectedServiceName = $serviceObj ? $serviceObj->namesv : '';
+        }
+
         return view('private-visit-details.print', compact(
             'visits',
             'totalCount',
@@ -255,7 +293,8 @@ class PrivateVisitDetailsController extends Controller
             'dateFrom',
             'dateTo',
             'hospitalName',
-            'mohName'
+            'mohName',
+            'selectedServiceName'
         ));
     }
 }

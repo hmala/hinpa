@@ -72,6 +72,9 @@
         color: #000 !important;
         background-color: #fff !important;
     }
+    .dataTables_filter, .dataTables_length {
+        display: none !important;
+    }
 </style>
 @endsection
 @section('page-header')
@@ -152,6 +155,26 @@
                             @endif
                         </div>
                     </div>
+
+                    @if(request()->hasAny(['patient_name', 'patient_phone', 'sequential_number', 'annual_number', 'statistical_number', 'patient_type', 'payment_status', 'created_at_from', 'created_at_to', 'moh_id', 'fck_id', 'hospital']))
+                    <div class="alert alert-info alert-dismissible fade show d-flex justify-content-between align-items-center mb-3 no-print" role="alert">
+                        <div>
+                            <i class="fas fa-filter me-1"></i> <strong>نتائج البحث المتقدم مفعلة</strong>
+                            <span class="text-muted mr-2">
+                                @if(request('patient_name')) | المريض: {{ request('patient_name') }} @endif
+                                @if(request('patient_phone')) | الهاتف: {{ request('patient_phone') }} @endif
+                                @if(request('sequential_number')) | التسلسلي: {{ request('sequential_number') }} @endif
+                                @if(request('annual_number')) | السنوي: {{ request('annual_number') }} @endif
+                                @if(request('statistical_number')) | الإحصائي: {{ request('statistical_number') }} @endif
+                                @if(request('patient_type')) | النوع: {{ request('patient_type') == 'outpatient' ? 'غير راقد' : 'راقد' }} @endif
+                                @if(request('payment_status')) | الدفع: {{ request('payment_status') == 'paid' ? 'مدفوع' : 'غير مدفوع' }} @endif
+                            </span>
+                        </div>
+                        <a href="{{ route('private-wings.index') }}" class="btn btn-sm btn-outline-danger">
+                            <i class="fas fa-times"></i> إلغاء الفلترة
+                        </a>
+                    </div>
+                    @endif
 
                     @if(session('success'))
                         <div class="alert alert-success no-print">
@@ -318,24 +341,16 @@
                             <input type="text" class="form-control" id="patient_phone" name="patient_phone" value="{{ request('patient_phone') }}" placeholder="ابحث برقم الهاتف">
                         </div>
                         <div class="col-md-6">
-                            <label for="hospital" class="form-label">المستشفى</label>
-                            <input type="text" class="form-control" id="hospital" name="hospital" value="{{ request('hospital') }}" placeholder="ابحث بالمستشفى">
+                            <label for="sequential_number" class="form-label">الترقيم التسلسلي (باركود)</label>
+                            <input type="text" class="form-control" id="sequential_number" name="sequential_number" value="{{ request('sequential_number') }}" placeholder="ابحث بالترقيم التسلسلي">
                         </div>
                         <div class="col-md-6">
-                            <label for="created_at_from" class="form-label">تاريخ تنظيم الاستمارة من</label>
-                            <input type="date" class="form-control" id="created_at_from" name="created_at_from" value="{{ request('created_at_from') }}">
+                            <label for="annual_number" class="form-label">الترقيم السنوي</label>
+                            <input type="text" class="form-control" id="annual_number" name="annual_number" value="{{ request('annual_number') }}" placeholder="ابحث بالترقيم السنوي">
                         </div>
                         <div class="col-md-6">
-                            <label for="created_at_to" class="form-label">تاريخ تنظيم الاستمارة إلى</label>
-                            <input type="date" class="form-control" id="created_at_to" name="created_at_to" value="{{ request('created_at_to') }}">
-                        </div>
-                        <div class="col-md-6">
-                            <label for="payment_status" class="form-label">حالة الدفع</label>
-                            <select class="form-control" id="payment_status" name="payment_status">
-                                <option value="">الكل</option>
-                                <option value="paid" {{ request('payment_status') == 'paid' ? 'selected' : '' }}>مدفوع</option>
-                                <option value="unpaid" {{ request('payment_status') == 'unpaid' ? 'selected' : '' }}>غير مدفوع</option>
-                            </select>
+                            <label for="statistical_number" class="form-label">الرقم الإحصائي</label>
+                            <input type="text" class="form-control" id="statistical_number" name="statistical_number" value="{{ request('statistical_number') }}" placeholder="ابحث بالرقم الإحصائي">
                         </div>
                         <div class="col-md-6">
                             <label for="patient_type" class="form-label">نوع المريض</label>
@@ -346,12 +361,20 @@
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <label for="annual_number" class="form-label">الترقيم السنوي</label>
-                            <input type="text" class="form-control" id="annual_number" name="annual_number" value="{{ request('annual_number') }}" placeholder="ابحث بالترقيم السنوي">
+                            <label for="payment_status" class="form-label">حالة الدفع</label>
+                            <select class="form-control" id="payment_status" name="payment_status">
+                                <option value="">الكل</option>
+                                <option value="paid" {{ request('payment_status') == 'paid' ? 'selected' : '' }}>مدفوع</option>
+                                <option value="unpaid" {{ request('payment_status') == 'unpaid' ? 'selected' : '' }}>غير مدفوع</option>
+                            </select>
                         </div>
                         <div class="col-md-6">
-                            <label for="statistical_number" class="form-label">الرقم الإحصائي</label>
-                            <input type="text" class="form-control" id="statistical_number" name="statistical_number" value="{{ request('statistical_number') }}" placeholder="ابحث بالرقم الإحصائي">
+                            <label for="created_at_from" class="form-label">تاريخ تنظيم الاستمارة من</label>
+                            <input type="date" class="form-control" id="created_at_from" name="created_at_from" value="{{ request('created_at_from') }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="created_at_to" class="form-label">تاريخ تنظيم الاستمارة إلى</label>
+                            <input type="date" class="form-control" id="created_at_to" name="created_at_to" value="{{ request('created_at_to') }}">
                         </div>
                         @if((in_array("Admin", auth()->user()->roles_name) || in_array("mohst", auth()->user()->roles_name)) && isset($availableMohs))
                         <div class="col-md-6">
@@ -547,8 +570,19 @@
 <script src="{{ URL::asset('assets/plugins/datatable/js/buttons.colVis.min.js') }}"></script>
 <script src="{{ URL::asset('assets/plugins/datatable/js/dataTables.responsive.min.js') }}"></script>
 <script src="{{ URL::asset('assets/plugins/datatable/js/responsive.bootstrap4.min.js') }}"></script>
-<!--Internal  Datatable js -->
-<script src="{{ URL::asset('assets/js/table-data.js') }}"></script>
+<script>
+    $(function() {
+        $('#example1').DataTable({
+            responsive: true,
+            scrollX: true,
+            autoWidth: false,
+            searching: false,
+            paging: false,
+            info: false,
+            ordering: false
+        });
+    });
+</script>
 
 <script>
     $(document).ready(function() {

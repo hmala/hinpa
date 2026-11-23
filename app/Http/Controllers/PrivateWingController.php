@@ -98,41 +98,71 @@ class PrivateWingController extends Controller
         return view('private-wings.invoice', compact('privateWing', 'services', 'totalAmount'));
     }
 
-    public function index(Request $request)
+    private function buildFilterQuery(Request $request)
     {
         $currentUser = Auth::user();
         $query = PrivateWing::query();
 
-        // تطبيق قيود الصلاحيات حسب نوع المستخدم
+        // تطبيق قيود الصلاحيات حسب نوع المستخدم مع دعم فلاتر البحث
         if (in_array("Admin", $currentUser->roles_name) || in_array("mohst", $currentUser->roles_name)) {
-            // Admin/mohst: عرض كل الأجنحة
-            // لا حاجة لفلترة
+            // Admin/mohst: صلاحية كاملة، وإذا اختار دائرة أو مؤسسة نطبق الفلترة
+            if ($request->filled('moh_id')) {
+                $query->where('moh_id', $request->moh_id);
+            }
+            if ($request->filled('fck_id')) {
+                $query->where('fck_id', $request->fck_id);
+            }
         } elseif ($currentUser->roles_name === ["stat-doh"]) {
-            // stat-doh: عرض أجنحة الدائرة فقط
+            // stat-doh: محصور بدائرته فقط، ويمكنه فلترة مؤسسات دائرته
             $query->where('moh_id', $currentUser->mohcode);
+            if ($request->filled('fck_id')) {
+                $query->where('fck_id', $request->fck_id);
+            }
         } else {
-            // مستخدمو المؤسسات: عرض أجنحة المؤسسة فقط
+            // مستخدمو المؤسسات: محصور بمؤسسته فقط
             $query->where('fck_id', $currentUser->fckid);
         }
 
         // إذا لم يتم تحديد حالة، أظهر فقط النشطة
         if (!$request->filled('status')) {
             $query->whereNull('cancelled_at');
+        } elseif ($request->status === 'cancelled') {
+            $query->whereNotNull('cancelled_at');
         }
 
-        // فلترة حسب الاسم
+        // فلترة حسب اسم المريض
         if ($request->filled('patient_name')) {
             $query->where('patient_name', 'like', '%' . $request->patient_name . '%');
         }
 
-        // فلترة حسب المستشفى
-        if ($request->filled('hospital')) {
-            $query->where('hospital', 'like', '%' . $request->hospital . '%');
+        // فلترة حسب رقم الهاتف
+        if ($request->filled('patient_phone')) {
+            $query->where('patient_phone', 'like', '%' . $request->patient_phone . '%');
         }
 
         // فلترة حسب الترقيم التسلسلي (باركود)
         if ($request->filled('sequential_number')) {
             $query->where('sequential_number', $request->sequential_number);
+        }
+
+        // فلترة حسب الترقيم السنوي
+        if ($request->filled('annual_number')) {
+            $query->where('annual_number', $request->annual_number);
+        }
+
+        // فلترة حسب الرقم الإحصائي
+        if ($request->filled('statistical_number')) {
+            $query->where('statistical_number', $request->statistical_number);
+        }
+
+        // فلترة حسب نوع المريض (راقد / غير راقد)
+        if ($request->filled('patient_type')) {
+            $query->where('patient_type', $request->patient_type);
+        }
+
+        // فلترة حسب المستشفى (نص)
+        if ($request->filled('hospital')) {
+            $query->where('hospital', 'like', '%' . $request->hospital . '%');
         }
 
         // فلترة حسب تاريخ تنظيم الاستمارة
@@ -141,6 +171,14 @@ class PrivateWingController extends Controller
         }
         if ($request->filled('created_at_to')) {
             $query->whereDate('created_at', '<=', $request->created_at_to);
+        }
+
+        // فلترة حسب تاريخ الدخول
+        if ($request->filled('entry_date_from')) {
+            $query->whereDate('entry_date', '>=', $request->entry_date_from);
+        }
+        if ($request->filled('entry_date_to')) {
+            $query->whereDate('entry_date', '<=', $request->entry_date_to);
         }
 
         // فلترة حسب حالة الدفع
@@ -154,6 +192,14 @@ class PrivateWingController extends Controller
                     break;
             }
         }
+
+        return $query;
+    }
+
+    public function index(Request $request)
+    {
+        $currentUser = Auth::user();
+        $query = $this->buildFilterQuery($request);
 
         $privateWings = $query->orderBy('entry_date', 'desc')->paginate(10)->appends($request->query());
         $debtWingsCount = PrivateWing::whereNull('cancelled_at')->where('deposit_amount', '<', DB::raw('total_amount'))->count();
@@ -346,9 +392,11 @@ class PrivateWingController extends Controller
                 $fileName = 'exception_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
                 $destinationPath = public_path('attachments/exceptions');
                 if (!file_exists($destinationPath)) {
-                    mkdir($destinationPath, 0777, true);
+                    mkdir($destinationPath, 0755, true);
+                    @chmod($destinationPath, 0755);
                 }
                 $file->move($destinationPath, $fileName);
+                @chmod($destinationPath . DIRECTORY_SEPARATOR . $fileName, 0644);
                 $attachmentPath = 'attachments/exceptions/' . $fileName;
             }
 
@@ -643,9 +691,11 @@ class PrivateWingController extends Controller
                 $fileName = 'exception_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
                 $destinationPath = public_path('attachments/exceptions');
                 if (!file_exists($destinationPath)) {
-                    mkdir($destinationPath, 0777, true);
+                    mkdir($destinationPath, 0755, true);
+                    @chmod($destinationPath, 0755);
                 }
                 $file->move($destinationPath, $fileName);
+                @chmod($destinationPath . DIRECTORY_SEPARATOR . $fileName, 0644);
                 $attachmentPath = 'attachments/exceptions/' . $fileName;
             }
 
@@ -1055,45 +1105,29 @@ class PrivateWingController extends Controller
 
     public function export(Request $request)
     {
-        $query = PrivateWing::query();
-
-        // نفس الفلاتر من index
-        if (!$request->filled('status')) {
-            $query->whereNull('cancelled_at');
-        }
-
-        if ($request->filled('patient_name')) {
-            $query->where('patient_name', 'like', '%' . $request->patient_name . '%');
-        }
-
-        if ($request->filled('hospital')) {
-            $query->where('hospital', 'like', '%' . $request->hospital . '%');
-        }
-
-        if ($request->filled('sequential_number')) {
-            $query->where('sequential_number', $request->sequential_number);
-        }
-
-        if ($request->filled('created_at_from')) {
-            $query->whereDate('created_at', '>=', $request->created_at_from);
-        }
-        if ($request->filled('created_at_to')) {
-            $query->whereDate('created_at', '<=', $request->created_at_to);
-        }
-
-        if ($request->filled('payment_status')) {
-            switch ($request->payment_status) {
-                case 'paid':
-                    $query->where('deposit_amount', '>=', DB::raw('total_amount'));
-                    break;
-                case 'unpaid':
-                    $query->where('deposit_amount', '<', DB::raw('total_amount'));
-                    break;
-            }
-        }
-
+        $query = $this->buildFilterQuery($request);
         $privateWings = $query->orderBy('created_at', 'desc')->get();
 
         return \Excel::download(new \App\Exports\PrivateWingsExport($privateWings), 'private-wings-' . date('Y-m-d') . '.xlsx');
+    }
+
+    public function viewExceptionAttachment($filename)
+    {
+        // البحث عن الملف في المسارات المحتملة (public أو storage أو public_html)
+        $possiblePaths = [
+            public_path('attachments/exceptions/' . $filename),
+            base_path('public/attachments/exceptions/' . $filename),
+            base_path('public_html/attachments/exceptions/' . $filename),
+            storage_path('app/public/attachments/exceptions/' . $filename),
+            storage_path('attachments/exceptions/' . $filename),
+        ];
+
+        foreach ($possiblePaths as $path) {
+            if (file_exists($path)) {
+                return response()->file($path);
+            }
+        }
+
+        abort(404, 'ملف الاستثناء غير موجود على السيرفر.');
     }
 }

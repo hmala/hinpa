@@ -7,8 +7,9 @@ use App\Models\TypeSpecialization;
 use App\Models\Service_Specialization;
 use App\Models\PrivateVisit;
 use App\Models\PrivateVisitService;
-use App\Models\PrivateVisitReceipt;
-use App\Models\PrivateVisitRefund;
+use App\Models\Doctor;
+use App\Models\Fck;
+use App\Models\mohs;
 use App\Helpers\NumberToArabicWords;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -38,60 +39,93 @@ class PrivateVisitController extends Controller
 
     public function invoice($visitId)
     {
-        $privateVisit = PrivateVisit::withTrashed()->with(['receipts'])->findOrFail($visitId);
+        $visit = PrivateVisit::withTrashed()->with([
+            'serviceSpecialization',
+            'doctor',
+            'services.serviceSpecialization',
+            'services.doctor'
+        ])->findOrFail($visitId);
+        
+        $privateVisit = $visit;
+        $services = $visit->services;
+        $totalAmount = $visit->total_amount;
 
-        $services = DB::table('private_visit_services as pvs')
-            ->join('service_specialization as ss', 'pvs.service_id', '=', 'ss.id')
-            ->leftJoin('doctors as d', 'pvs.doctor_id', '=', 'd.id')
-            ->where('pvs.private_visit_id', $privateVisit->id)
-            ->select(
-                'ss.namesv as service_name',
-                'd.name as doctor_name',
-                'pvs.service_fee',
-                'pvs.total_amount',
-                'pvs.operation_degree',
-                'pvs.is_insured',
-                'pvs.insurance_percentage',
-                'pvs.patient_amount',
-                'pvs.insurance_amount'
-            )
-            ->orderBy('ss.namesv', 'asc')
-            ->get();
-
-        $totalAmount = $services->sum('total_amount');
-
-        return view('private-visits.invoice', compact('privateVisit', 'services', 'totalAmount'));
+        return view('private-visits.invoice', compact('visit', 'privateVisit', 'services', 'totalAmount'));
     }
 
-    public function index(Request $request)
+    private function buildFilterQuery(Request $request)
     {
         $currentUser = Auth::user();
         $query = PrivateVisit::with(['serviceSpecialization', 'doctor']);
 
+        // تطبيق قيود الصلاحيات حسب نوع المستخدم مع دعم فلاتر البحث
         if (in_array("Admin", $currentUser->roles_name) || in_array("mohst", $currentUser->roles_name)) {
-            // Admin/mohst: عرض كل الزيارات
+            if ($request->filled('moh_id')) {
+                $query->where('moh_id', $request->moh_id);
+            }
+            if ($request->filled('fck_id')) {
+                $query->where('fck_id', $request->fck_id);
+            }
         } elseif ($currentUser->roles_name === ["stat-doh"]) {
             $query->where('moh_id', $currentUser->mohcode);
+            if ($request->filled('fck_id')) {
+                $query->where('fck_id', $request->fck_id);
+            }
         } else {
             $query->where('fck_id', $currentUser->fckid);
         }
 
+        // إذا لم يتم تحديد حالة، أظهر فقط النشطة
         if (!$request->filled('status')) {
             $query->whereNull('cancelled_at');
+        } elseif ($request->status === 'cancelled') {
+            $query->whereNotNull('cancelled_at');
         }
 
+        // فلترة حسب اسم الزائر / المريض
         if ($request->filled('patient_name')) {
-            $query->where('patient_name', 'like', '%' . $request->patient_name . '%');
+            $name = $request->patient_name;
+            $query->where(function($q) use ($name) {
+                $q->where('patient_name', 'like', '%' . $name . '%')
+                  ->orWhere('visitor_name', 'like', '%' . $name . '%');
+            });
         }
 
-        if ($request->filled('hospital')) {
-            $query->where('hospital', 'like', '%' . $request->hospital . '%');
+        // فلترة حسب رقم الهاتف
+        if ($request->filled('patient_phone')) {
+            $phone = $request->patient_phone;
+            $query->where(function($q) use ($phone) {
+                $q->where('patient_phone', 'like', '%' . $phone . '%')
+                  ->orWhere('visitor_phone', 'like', '%' . $phone . '%');
+            });
         }
 
+        // فلترة حسب الترقيم التسلسلي (باركود)
         if ($request->filled('sequential_number')) {
             $query->where('sequential_number', $request->sequential_number);
         }
 
+        // فلترة حسب الترقيم السنوي
+        if ($request->filled('annual_number')) {
+            $query->where('annual_number', $request->annual_number);
+        }
+
+        // فلترة حسب رقم الوصل
+        if ($request->filled('receipt_number')) {
+            $query->where('receipt_number', 'like', '%' . $request->receipt_number . '%');
+        }
+
+        // فلترة حسب طريقة الدفع
+        if ($request->filled('payment_type')) {
+            $query->where('payment_type', $request->payment_type);
+        }
+
+        // فلترة حسب المستشفى (نص)
+        if ($request->filled('hospital')) {
+            $query->where('hospital', 'like', '%' . $request->hospital . '%');
+        }
+
+        // فلترة حسب تاريخ تنظيم الاستمارة
         if ($request->filled('created_at_from')) {
             $query->whereDate('created_at', '>=', $request->created_at_from);
         }
@@ -99,6 +133,15 @@ class PrivateVisitController extends Controller
             $query->whereDate('created_at', '<=', $request->created_at_to);
         }
 
+        // فلترة حسب تاريخ الزيارة
+        if ($request->filled('visit_date_from')) {
+            $query->whereDate('visit_date', '>=', $request->visit_date_from);
+        }
+        if ($request->filled('visit_date_to')) {
+            $query->whereDate('visit_date', '<=', $request->visit_date_to);
+        }
+
+        // فلترة حسب حالة الدفع
         if ($request->filled('payment_status')) {
             switch ($request->payment_status) {
                 case 'paid':
@@ -110,11 +153,33 @@ class PrivateVisitController extends Controller
             }
         }
 
+        return $query;
+    }
+
+    public function index(Request $request)
+    {
+        $currentUser = Auth::user();
+        $query = $this->buildFilterQuery($request);
+
         $privateVisits = $query->orderBy('visit_date', 'desc')->paginate(10)->appends($request->query());
         $debtVisitsCount = PrivateVisit::whereNull('cancelled_at')->where('deposit_amount', '<', DB::raw('total_amount'))->count();
 
+        // المؤسسات والدوائر المتاحة لمودال البحث المتقدم
+        $userMohId = $currentUser->mohcode;
+        $userFckId = $currentUser->fckid;
+        if (in_array("Admin", $currentUser->roles_name) || in_array("mohst", $currentUser->roles_name)) {
+            $availableFcks = \App\Models\Fck::all();
+            $availableMohs = \App\Models\mohs::all();
+        } elseif ($currentUser->roles_name === ["stat-doh"]) {
+            $availableFcks = \App\Models\Fck::where('moh_id', $userMohId)->get();
+            $availableMohs = \App\Models\mohs::where('id', $userMohId)->get();
+        } else {
+            $availableFcks = \App\Models\Fck::where('id', $userFckId)->get();
+            $availableMohs = \App\Models\mohs::where('id', $userMohId)->get();
+        }
+
         $visits = $privateVisits;
-        return view('private-visits.index', compact('privateVisits', 'visits', 'debtVisitsCount'));
+        return view('private-visits.index', compact('privateVisits', 'visits', 'debtVisitsCount', 'availableMohs', 'availableFcks'));
     }
 
     public function create()
@@ -208,51 +273,59 @@ class PrivateVisitController extends Controller
     {
         Log::info('Request data (Visits):', $request->all());
 
+        // التحقق من صحة البيانات المرسلة من واجهة الزيارات والخدمات الخارجية
         $validated = $request->validate([
-            'hospital' => 'required|string|max:255',
-            'health_department' => 'required|string|max:255',
-            'moh_id' => 'required|exists:mohs,id',
-            'fck_id' => 'required|exists:fcks,id',
-            'patient_name' => 'required|string|max:255',
-            'patient_nationality' => 'nullable|string|max:255',
-            'is_insured' => 'nullable|boolean',
-            'statistical_number' => 'nullable|string|max:255',
+            'hospital' => 'nullable|string|max:255',
+            'health_department' => 'nullable|string|max:255',
+            'moh_id' => 'nullable|exists:mohs,id',
+            'fck_id' => 'nullable|exists:fcks,id',
             'visit_date' => 'required|date',
-            'visit_time' => 'nullable|date_format:H:i',
-            'deposits' => 'required|array|min:1',
-            'deposits.*.amount' => 'required|numeric|min:0',
-            'deposits.*.number' => 'required|string|max:255',
-            'deposits.*.date' => 'required|date',
-            'deposits.*.payment_type' => 'required|in:كاش,إلكتروني',
-            'deposits.*.interest_rate' => 'required|numeric|min:0|max:100',
-            'deposits.*.interest_amount' => 'required|numeric|min:0',
-            'services' => 'required|array',
-            'services.*.id' => 'required|exists:service_specialization,id',
-            'services.*.fee' => 'required|numeric',
-            'services.*.is_insured' => 'required|boolean',
-            'services.*.insurance_percentage' => 'required|numeric|min:0|max:100',
-            'services.*.doctor_id' => 'nullable|exists:doctors,id',
-            'services.*.operation_degree' => 'nullable|string|max:255'
+            'service_id' => 'required|exists:service_specialization,id',
+            'patients' => 'required|array|min:1',
+            'patients.*.visitor_name' => 'required|string|max:255',
+            'patients.*.visitor_nationality' => 'nullable|string|max:255',
+            'patients.*.doctor_id' => 'nullable|exists:doctors,id',
+            'patients.*.payment_type' => 'required|in:كاش,إلكتروني',
+            'patients.*.receipt_number' => 'required|string|max:255',
+            'patients.*.receipt_date' => 'required|date',
+            'patients.*.fee' => 'required|numeric|min:0',
+            'patients.*.interest_rate' => 'nullable|numeric|min:0|max:100',
+        ], [
+            'service_id.required' => 'يرجى تحديد الخدمة التفصيلية المطلوبة.',
+            'service_id.exists' => 'الخدمة التفصيلية المختارة غير صالحة.',
+            'visit_date.required' => 'تاريخ الزيارة مطلوب.',
+            'patients.required' => 'يجب إضافة مريض واحد على الأقل في القائمة.',
+            'patients.min' => 'يجب إضافة مريض واحد على الأقل في القائمة.',
+            'patients.*.visitor_name.required' => 'اسم المريض / الزائر مطلوب في كل سطر.',
+            'patients.*.receipt_number.required' => 'رقم الوصل مطلوب في كل سطر.',
+            'patients.*.receipt_date.required' => 'تاريخ الوصل مطلوب في كل سطر.',
+            'patients.*.fee.required' => 'المبلغ مطلوب في كل سطر.',
+            'patients.*.fee.numeric' => 'المبلغ يجب أن يكون رقماً.',
         ]);
-        
+
         $currentUser = Auth::user();
+        $mohId = $validated['moh_id'] ?? ($currentUser->mohcode ?: 1);
+        $fckId = $validated['fck_id'] ?? ($currentUser->fckid ?: 1);
+
         if (!in_array("Admin", $currentUser->roles_name) && !in_array("mohst", $currentUser->roles_name)) {
             if ($currentUser->roles_name === ["stat-doh"]) {
-                if ($validated['moh_id'] != $currentUser->mohcode) {
+                if ($mohId != $currentUser->mohcode) {
                     return redirect()->back()->withErrors(['moh_id' => 'غير مسموح لك بإضافة بيانات لدوائر أخرى'])->withInput();
                 }
             } else {
-                if ($validated['fck_id'] != $currentUser->fckid) {
+                if ($fckId != $currentUser->fckid) {
                     return redirect()->back()->withErrors(['fck_id' => 'غير مسموح لك بإضافة بيانات لمؤسسات أخرى'])->withInput();
                 }
             }
         }
 
+        $hospital = !empty($validated['hospital']) ? $validated['hospital'] : ($currentUser->fck ? $currentUser->fck->Fckname : '');
+        $healthDepartment = !empty($validated['health_department']) ? $validated['health_department'] : ($currentUser->moh ? ($currentUser->moh->mohname ?? $currentUser->moh->Mohname) : '');
+
         try {
             DB::beginTransaction();
 
-            $fckId = $validated['fck_id'];
-            $currentYear = date('Y');
+            $currentYear = date('Y', strtotime($validated['visit_date']));
 
             $lastAnnual = PrivateVisit::where('fck_id', $fckId)
                 ->where('fiscal_year', $currentYear)
@@ -267,143 +340,100 @@ class PrivateVisitController extends Controller
                 ->first();
             $nextSequentialNumber = $lastSequential ? ((int)$lastSequential->sequential_number + 1) : 1;
 
-            $privateVisit = PrivateVisit::create([
-                'hospital' => $validated['hospital'],
-                'health_department' => $validated['health_department'],
-                'moh_id' => $validated['moh_id'],
-                'fck_id' => $validated['fck_id'],
-                'patient_name' => $validated['patient_name'],
-                'patient_nationality' => $validated['patient_nationality'] ?? null,
-                'annual_number' => $nextAnnualNumber,
-                'fiscal_year' => $currentYear,
-                'sequential_number' => $nextSequentialNumber,
-                'statistical_number' => $validated['statistical_number'] ?? null,
-                'visit_date' => $validated['visit_date'],
-                'visit_time' => $validated['visit_time'] ?? null,
-                'is_insured' => $validated['is_insured'] ?? false
-            ]);
+            foreach ($validated['patients'] as $patient) {
+                $fee = floatval($patient['fee'] ?? 0);
+                $paymentType = $patient['payment_type'] ?? 'كاش';
+                $interestRate = ($paymentType === 'كاش') ? floatval($patient['interest_rate'] ?? 0) : 0;
+                $interestAmount = round(($fee * ($interestRate / 100)), 2);
+                $totalAmount = $fee + $interestAmount;
+                $doctorId = !empty($patient['doctor_id']) && $patient['doctor_id'] !== 'null' ? $patient['doctor_id'] : null;
 
-            $totalDeposits = 0;
-            foreach ($validated['deposits'] as $deposit) {
-                $privateVisit->receipts()->create([
-                    'amount' => $deposit['amount'],
-                    'receipt_number' => $deposit['number'],
-                    'receipt_date' => $deposit['date'],
-                    'payment_type' => $deposit['payment_type'],
-                    'interest_rate' => $deposit['interest_rate'],
-                    'interest_amount' => $deposit['interest_amount']
+                $privateVisit = PrivateVisit::create([
+                    'hospital' => $hospital,
+                    'health_department' => $healthDepartment,
+                    'moh_id' => $mohId,
+                    'fck_id' => $fckId,
+                    'visitor_name' => $patient['visitor_name'],
+                    'patient_name' => $patient['visitor_name'],
+                    'visitor_nationality' => $patient['visitor_nationality'] ?? 'عراقي',
+                    'patient_nationality' => $patient['visitor_nationality'] ?? 'عراقي',
+                    'annual_number' => $nextAnnualNumber++,
+                    'fiscal_year' => $currentYear,
+                    'sequential_number' => $nextSequentialNumber++,
+                    'visit_date' => $validated['visit_date'],
+                    'visit_time' => now()->format('H:i'),
+                    'service_id' => $validated['service_id'],
+                    'doctor_id' => $doctorId,
+                    'service_fee' => $fee,
+                    'payment_type' => $paymentType,
+                    'interest_rate' => $interestRate,
+                    'interest_amount' => $interestAmount,
+                    'receipt_number' => $patient['receipt_number'],
+                    'receipt_date' => $patient['receipt_date'],
+                    'total_amount' => $totalAmount,
                 ]);
-                $totalDeposits += $deposit['amount'] + $deposit['interest_amount'];
-            }
-            
-            $privateVisit->update([
-                'deposit_amount' => $totalDeposits
-            ]);
-            $totalAmount = 0;
-            
-            foreach ($validated['services'] as $service) {
-                $serviceAmount = $service['fee'];
-                $patientAmount = 0;
-                $insuranceAmount = 0;
-                $insurancePercentage = $service['insurance_percentage'] ?? 100;
-                
-                if ($service['is_insured']) {
-                    $patientAmount = $serviceAmount * ($insurancePercentage / 100);
-                    $insuranceAmount = $serviceAmount * ((100 - $insurancePercentage) / 100);
-                } else {
-                    $patientAmount = $serviceAmount;
-                    $insuranceAmount = 0;
-                }
-                  
-                $doctorId = !empty($service['doctor_id']) && $service['doctor_id'] !== 'null' ? $service['doctor_id'] : null;
 
                 DB::table('private_visit_services')->insert([
                     'private_visit_id' => $privateVisit->id,
-                    'service_id' => $service['id'],
-                    'service_fee' => $service['fee'],
-                    'is_insured' => $service['is_insured'],
-                    'insurance_percentage' => $insurancePercentage,
-                    'patient_amount' => $patientAmount,
-                    'insurance_amount' => $insuranceAmount,
+                    'service_id' => $validated['service_id'],
+                    'service_fee' => $fee,
+                    'patient_amount' => $totalAmount,
+                    'insurance_amount' => 0,
                     'doctor_id' => $doctorId,
-                    'total_amount' => $serviceAmount,
-                    'operation_degree' => $service['operation_degree'] ?? null,
+                    'total_amount' => $totalAmount,
+                    'operation_degree' => null,
                     'created_at' => now(),
-                    'updated_at' => now()
+                    'updated_at' => now(),
                 ]);
-                
-                $totalAmount += $patientAmount;
             }
-
-            $privateVisit->update(['total_amount' => $totalAmount]);
 
             DB::commit();
 
             return redirect()->route('private-visits.index')
-                ->with('success', 'تم إنشاء سجل زيارة الجناح الخاص بنجاح');
+                ->with('success', 'تم حفظ وتأكيد زيارات المرضى بنجاح');
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Error saving private visit: ' . $e->getMessage());
-            return back()->withErrors(['error' => $e->getMessage()])->withInput();
+            Log::error('Error saving private visits: ' . $e->getMessage());
+            return back()->withErrors(['error' => 'حدث خطأ أثناء حفظ الزيارات: ' . $e->getMessage()])->withInput();
         }
     }
 
     public function show($id)
     {
-        $privateVisit = PrivateVisit::withTrashed()->with(['receipts', 'refunds'])->findOrFail($id);
-        
-        $services = DB::table('private_visit_services as pvs')
-            ->join('service_specialization as ss', 'pvs.service_id', '=', 'ss.id')
-            ->leftJoin('doctors as d', 'pvs.doctor_id', '=', 'd.id')
-            ->where('pvs.private_visit_id', $privateVisit->id)
-            ->select(
-                'ss.namesv as service_name',
-                'd.name as doctor_name',
-                'pvs.service_fee',
-                'pvs.total_amount',
-                'pvs.operation_degree',
-                'pvs.is_insured',
-                'pvs.insurance_percentage',
-                'pvs.patient_amount',
-                'pvs.insurance_amount'
-            )
-            ->orderBy('ss.namesv', 'asc')
-            ->get();
+        $visit = PrivateVisit::withTrashed()->with(['serviceSpecialization', 'doctor', 'services.serviceSpecialization', 'services.doctor'])->findOrFail($id);
+        $privateVisit = $visit;
+        $services = $visit->services;
+        $totalAmount = $visit->total_amount;
 
-        $totalAmount = $services->sum('total_amount');
-
-        return view('private-visits.show', compact('privateVisit', 'services', 'totalAmount'));
+        return view('private-visits.show', compact('visit', 'privateVisit', 'services', 'totalAmount'));
     }
 
     public function edit($id)
     {
-        $privateVisit = PrivateVisit::findOrFail($id);
-        $privateVisit->load('services');
-        $typeSpecializations = TypeSpecialization::all();
+        $visit = PrivateVisit::findOrFail($id);
+        $privateVisit = $visit;
 
         $currentUser = Auth::user();
-        $doctors = \App\Models\Doctor::where('fck_id', $currentUser->fckid)->get();
-        
-        $services = $privateVisit->privateVisitServices()
-            ->join('service_specialization as ss', 'private_visit_services.service_id', '=', 'ss.id')
-            ->leftJoin('doctors as d', 'private_visit_services.doctor_id', '=', 'd.id')
-            ->select(
-                'private_visit_services.id',
-                'ss.namesv as service_name',
-                'private_visit_services.doctor_id',
-                'd.name as doctor_name',
-                'private_visit_services.service_fee',
-                'private_visit_services.is_insured',
-                'private_visit_services.insurance_percentage',
-                'private_visit_services.patient_amount',
-                'private_visit_services.insurance_amount',
-                'private_visit_services.total_amount',
-                'private_visit_services.operation_degree'
-            )
-            ->orderBy('ss.namesv', 'asc')
-            ->get();
-        
-        return view('private-visits.edit', compact('privateVisit', 'typeSpecializations', 'services', 'doctors'));
+        $doctors = \App\Models\Doctor::where('fck_id', $visit->fck_id)->get();
+
+        $subSpecializations = Service::where('type_specializations_id', 8)->orWhereNull('type_specializations_id')->orderBy('sername', 'asc')->get();
+
+        $selectedService = Service_Specialization::find($visit->service_id);
+        $selectedSubSpecId = null;
+        $detailServices = collect();
+
+        if ($selectedService) {
+            $subService = Service::where('sercode', $selectedService->service_id)->orWhere('id', $selectedService->service_id)->first();
+            $selectedSubSpecId = $subService ? $subService->id : null;
+            if ($subService) {
+                $detailServices = Service_Specialization::where('service_id', $subService->sercode)
+                    ->orWhere('service_id', $subService->id)
+                    ->orderBy('namesv', 'asc')
+                    ->get();
+            }
+        }
+
+        return view('private-visits.edit', compact('visit', 'privateVisit', 'subSpecializations', 'selectedSubSpecId', 'detailServices', 'doctors'));
     }
 
     public function update(Request $request, $id)
@@ -411,109 +441,61 @@ class PrivateVisitController extends Controller
         $privateVisit = PrivateVisit::findOrFail($id);
 
         $validated = $request->validate([
-            'hospital' => 'required|string|max:255',
-            'health_department' => 'required|string|max:255',
-            'patient_name' => 'required|string|max:255',
-            'patient_nationality' => 'nullable|string|max:255',
-            'is_insured' => 'nullable|boolean',
-            'annual_number' => 'required|integer',
-            'fiscal_year' => 'required|integer',
-            'statistical_number' => 'nullable|string|max:255',
+            'service_id' => 'required|exists:service_specialization,id',
+            'visitor_name' => 'required|string|max:255',
+            'visitor_nationality' => 'nullable|string|max:255',
+            'doctor_id' => 'nullable|exists:doctors,id',
             'visit_date' => 'required|date',
-            'visit_time' => 'nullable|date_format:H:i',
-            'deposits' => 'nullable|array',
-            'deposits.*.amount' => 'required|numeric|min:0',
-            'deposits.*.number' => 'required|string|max:255',
-            'deposits.*.date' => 'required|date',
-            'deposits.*.payment_type' => 'required|in:كاش,إلكتروني',
-            'deposits.*.interest_rate' => 'required|numeric|min:0|max:100',
-            'deposits.*.interest_amount' => 'required|numeric|min:0',
-            'services' => 'required|array',
-            'services.*.id' => 'required|exists:service_specialization,id',
-            'services.*.fee' => 'required|numeric',
-            'services.*.is_insured' => 'required|boolean',
-            'services.*.insurance_percentage' => 'required|numeric|min:0|max:100',
-            'services.*.doctor_id' => 'nullable|exists:doctors,id',
-            'services.*.operation_degree' => 'nullable|string|max:255'
+            'payment_type' => 'required|in:كاش,إلكتروني',
+            'receipt_number' => 'required|string|max:255',
+            'receipt_date' => 'required|date',
+            'service_fee' => 'required|numeric|min:0',
+            'interest_rate' => 'nullable|numeric|min:0|max:100',
+        ], [
+            'service_id.required' => 'يرجى اختيار الخدمة التفصيلية.',
+            'visitor_name.required' => 'اسم المريض / الزائر مطلوب.',
+            'visit_date.required' => 'تاريخ الزيارة مطلوب.',
+            'receipt_number.required' => 'رقم الوصل مطلوب.',
+            'receipt_date.required' => 'تاريخ الوصل مطلوب.',
+            'service_fee.required' => 'المبلغ الأساسي للخدمة مطلوب.',
         ]);
 
         try {
             DB::beginTransaction();
 
+            $fee = floatval($validated['service_fee']);
+            $paymentType = $validated['payment_type'];
+            $interestRate = ($paymentType === 'كاش') ? floatval($validated['interest_rate'] ?? 0) : 0;
+            $interestAmount = round(($fee * ($interestRate / 100)), 2);
+            $totalAmount = $fee + $interestAmount;
+
             $privateVisit->update([
-                'hospital' => $validated['hospital'],
-                'health_department' => $validated['health_department'],
-                'patient_name' => $validated['patient_name'],
-                'patient_nationality' => $validated['patient_nationality'] ?? null,
-                'annual_number' => $validated['annual_number'],
-                'fiscal_year' => $validated['fiscal_year'],
-                'statistical_number' => $validated['statistical_number'] ?? null,
+                'visitor_name' => $validated['visitor_name'],
+                'patient_name' => $validated['visitor_name'],
+                'visitor_nationality' => $validated['visitor_nationality'] ?? 'عراقي',
+                'patient_nationality' => $validated['visitor_nationality'] ?? 'عراقي',
+                'service_id' => $validated['service_id'],
+                'doctor_id' => $validated['doctor_id'] ?: null,
                 'visit_date' => $validated['visit_date'],
-                'visit_time' => $validated['visit_time'] ?? null,
-                'is_insured' => $validated['is_insured'] ?? false
+                'payment_type' => $paymentType,
+                'receipt_number' => $validated['receipt_number'],
+                'receipt_date' => $validated['receipt_date'],
+                'service_fee' => $fee,
+                'interest_rate' => $interestRate,
+                'interest_amount' => $interestAmount,
+                'total_amount' => $totalAmount,
             ]);
 
-            $privateVisit->privateVisitServices()->delete();
-
-            $totalAmount = 0;
-            foreach ($validated['services'] as $service) {
-                $serviceAmount = $service['fee'];
-                $patientAmount = 0;
-                $insuranceAmount = 0;
-                $insurancePercentage = $service['insurance_percentage'] ?? 100;
-                
-                if ($service['is_insured']) {
-                    $patientAmount = $serviceAmount * ($insurancePercentage / 100);
-                    $insuranceAmount = $serviceAmount * ((100 - $insurancePercentage) / 100);
-                } else {
-                    $patientAmount = $serviceAmount;
-                    $insuranceAmount = 0;
-                }
-
-                $doctorId = !empty($service['doctor_id']) && $service['doctor_id'] !== 'null' ? $service['doctor_id'] : null;
-
-                DB::table('private_visit_services')->insert([
-                    'private_visit_id' => $privateVisit->id,
-                    'service_id' => $service['id'],
-                    'service_fee' => $service['fee'],
-                    'is_insured' => $service['is_insured'],
-                    'insurance_percentage' => $insurancePercentage,
-                    'patient_amount' => $patientAmount,
-                    'insurance_amount' => $insuranceAmount,
-                    'doctor_id' => $doctorId,
-                    'total_amount' => $serviceAmount,
-                    'operation_degree' => $service['operation_degree'] ?? null,
-                    'created_at' => now(),
-                    'updated_at' => now()
-                ]);
-
-                $totalAmount += $patientAmount;
-            }
-
-            if (isset($validated['deposits']) && is_array($validated['deposits'])) {
-                foreach ($validated['deposits'] as $deposit) {
-                    $interestRate = $deposit['payment_type'] === 'كاش' ? 5.00 : 0.00;
-                    $interestAmount = ($deposit['amount'] * $interestRate) / 100;
-
-                    PrivateVisitReceipt::create([
-                        'private_visit_id' => $privateVisit->id,
-                        'receipt_number' => $deposit['number'],
-                        'amount' => $deposit['amount'],
-                        'receipt_date' => $deposit['date'],
-                        'payment_type' => $deposit['payment_type'],
-                        'interest_rate' => $interestRate,
-                        'interest_amount' => $interestAmount,
-                    ]);
-                }
-            }
-
-            $totalDeposits = $privateVisit->receipts->sum(function($receipt) {
-                return $receipt->amount + $receipt->interest_amount;
-            });
-
-            $privateVisit->update([
+            // تحديث جدول الخدمات التابع للزيارة
+            $privateVisit->services()->delete();
+            $privateVisit->services()->create([
+                'service_id' => $validated['service_id'],
+                'service_fee' => $fee,
+                'patient_amount' => $totalAmount,
+                'insurance_amount' => 0,
+                'doctor_id' => $validated['doctor_id'] ?: null,
                 'total_amount' => $totalAmount,
-                'deposit_amount' => $totalDeposits
+                'operation_degree' => null,
             ]);
 
             DB::commit();
@@ -523,7 +505,7 @@ class PrivateVisitController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Error updating private visit: ' . $e->getMessage());
-            return back()->withErrors(['error' => $e->getMessage()])->withInput();
+            return back()->withErrors(['error' => 'حدث خطأ أثناء التعديل: ' . $e->getMessage()])->withInput();
         }
     }
 

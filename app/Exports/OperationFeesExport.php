@@ -24,7 +24,7 @@ class OperationFeesExport implements FromCollection, WithHeadings, WithStyles, W
         $this->month = $month;
         $this->year = $year;
         $request = $request ?: request();
-        $this->operationDegrees = ['الخاصة', 'فوق الكبرى', 'كبرى', 'متوسطة', 'صغرى'];
+        $this->operationDegrees = ['الخاصة', 'فوق الكبرى', 'كبرى', 'متوسطة', 'صغرى', 'مراقبة', 'تأجيل عملية', 'عملية شاملة', 'زراعة قوقعة'];
 
         // Get operation fees grouped by operation degree
         $operationFeesByDegree = [];

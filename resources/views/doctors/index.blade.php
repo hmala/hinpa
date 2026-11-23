@@ -46,8 +46,49 @@
                         </div>
                     @endif
 
+                    <!-- فلتر وبحث الأطباء الشامل -->
+                    <form method="GET" action="{{ route('doctors.index') }}" class="mb-4">
+                        <div class="row g-2 align-items-center">
+                            <div class="col-md-5">
+                                <div class="input-group">
+                                    <input type="text" name="search" class="form-control" placeholder="ابحث باسم الطبيب، المسمى الوظيفي، أو التخصص..." value="{{ request('search') }}">
+                                    <div class="input-group-append">
+                                        <button class="btn btn-primary" type="submit">
+                                            <i class="fas fa-search"></i> بحث
+                                        </button>
+                                        @if(request()->filled('search') || request()->filled('moh_id') || request()->filled('fck_id'))
+                                            <a href="{{ route('doctors.index') }}" class="btn btn-secondary" title="إلغاء البحث">
+                                                <i class="fas fa-times"></i> مسح
+                                            </a>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                            @if(isset($availableMohs) && $availableMohs->isNotEmpty())
+                            <div class="col-md-3">
+                                <select name="moh_id" id="moh_id" class="form-control" onchange="this.form.submit()">
+                                    <option value="">جميع الدوائر</option>
+                                    @foreach($availableMohs as $moh)
+                                        <option value="{{ $moh->id }}" {{ request('moh_id') == $moh->id ? 'selected' : '' }}>{{ $moh->mohname }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            @endif
+                            @if(isset($availableFcks) && $availableFcks->isNotEmpty())
+                            <div class="col-md-3">
+                                <select name="fck_id" id="fck_id" class="form-control" onchange="this.form.submit()">
+                                    <option value="">جميع المستشفيات</option>
+                                    @foreach($availableFcks as $fck)
+                                        <option value="{{ $fck->id }}" data-moh-id="{{ $fck->moh_id }}" {{ request('fck_id') == $fck->id ? 'selected' : '' }}>{{ $fck->Fckname }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            @endif
+                        </div>
+                    </form>
+
                     <div class="table-responsive">
-                       <table id="example1" class="table key-buttons text-md-nowrap" data-page-length='20' style="text-align: center">
+                       <table id="example1" class="table key-buttons text-md-nowrap" style="text-align: center">
                             <thead>
                                 <tr>
                                     <th>#</th>
@@ -59,9 +100,9 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach($doctors as $doctor)
+                                @forelse($doctors as $doctor)
                                 <tr>
-                                    <td>{{ $loop->iteration }}</td>
+                                    <td>{{ ($doctors->currentPage() - 1) * $doctors->perPage() + $loop->iteration }}</td>
                                     <td>{{ $doctor->name }}</td>
                                     <td>{{ $doctor->job_title }}</td>
                                     <td>{{ $doctor->moh ? $doctor->moh->mohname : 'N/A' }}</td>
@@ -76,12 +117,21 @@
                                         </form>
                                     </td>
                                 </tr>
-                                @endforeach
+                                @empty
+                                <tr>
+                                    <td colspan="6" class="text-center py-4 text-muted">
+                                        <i class="fas fa-user-md fa-2x mb-2 d-block"></i>
+                                        لا توجد نتائج مطابقة للبحث
+                                    </td>
+                                </tr>
+                                @endforelse
                             </tbody>
                         </table>
                     </div>
 
-                    {{ $doctors->links() }}
+                    <div class="mt-3">
+                        {{ $doctors->links() }}
+                    </div>
                 </div>
             </div>
         </div>
@@ -106,8 +156,38 @@
 <script src="{{ URL::asset('assets/plugins/datatable/js/buttons.colVis.min.js') }}"></script>
 <script src="{{ URL::asset('assets/plugins/datatable/js/dataTables.responsive.min.js') }}"></script>
 <script src="{{ URL::asset('assets/plugins/datatable/js/responsive.bootstrap4.min.js') }}"></script>
-<!--Internal  Datatable js -->
-<script src="{{ URL::asset('assets/js/table-data.js') }}"></script>
+<script>
+    $(function() {
+        $('#example1').DataTable({
+            responsive: true,
+            scrollX: true,
+            autoWidth: false,
+            searching: false,
+            paging: false,
+            info: false,
+            ordering: false
+        });
+
+        var $mohSelect = $('#moh_id');
+        var $fckSelect = $('#fck_id');
+        if ($mohSelect.length && $fckSelect.length) {
+            var allFckOptions = $fckSelect.find('option').clone();
+            $mohSelect.on('change', function() {
+                var selectedMoh = $(this).val();
+                $fckSelect.empty();
+                $fckSelect.append('<option value="">جميع المستشفيات</option>');
+                allFckOptions.each(function() {
+                    var mohId = $(this).data('moh-id');
+                    if (!selectedMoh || mohId == selectedMoh) {
+                        if ($(this).val() !== '') {
+                            $fckSelect.append($(this).clone());
+                        }
+                    }
+                });
+            });
+        }
+    });
+</script>
 <!--Internal  Notify js -->
 <script src="{{ URL::asset('assets/plugins/notify/js/notifIt.js') }}"></script>
 <script src="{{ URL::asset('assets/plugins/notify/js/notifit-custom.js') }}"></script>

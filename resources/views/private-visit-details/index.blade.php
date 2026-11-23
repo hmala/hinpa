@@ -3,6 +3,7 @@
 تقرير حسابات ووصولات الزيارات الخارجية المعتمد
 @stop
 @section('css')
+<link href="{{ URL::asset('assets/plugins/select2/css/select2.min.css') }}" rel="stylesheet">
 <style>
     @media print {
         .no-print { display: none !important; }
@@ -142,13 +143,18 @@
                             </div>
                             <div class="col-4 text-center">
                                 <h4 class="font-weight-bold mb-1">كشف حسابات ووصولات الزيارات الخارجية</h4>
-                                <h6 class="text-primary mb-0 font-weight-bold">
+                                <h6 class="text-primary mb-1 font-weight-bold">
                                     @if($dateFrom || $dateTo)
                                         للفترة من: {{ $dateFrom ?: 'بداية التسجيل' }} إلى: {{ $dateTo ?: 'تاريخ اليوم' }}
                                     @else
                                         تقرير شامل لكافة الزيارات
                                     @endif
                                 </h6>
+                                @if(!empty($selectedServiceName))
+                                <div class="badge badge-info p-1 tx-12" style="font-size: 11px;">
+                                    الخدمة: {{ $selectedServiceName }}
+                                </div>
+                                @endif
                             </div>
                             <div class="col-4 text-left">
                                 <p class="mb-1 tx-11"><strong>تاريخ الطباعة:</strong> {{ date('Y-m-d') }}</p>
@@ -193,18 +199,18 @@
                                 </select>
                             </div>
                             <div class="col-md-4">
-                                <label for="doctor_id" class="form-label font-weight-bold tx-12">الطبيب</label>
-                                <select name="doctor_id" id="doctor_id" class="form-control form-control-sm">
-                                    <option value="">جميع الأطباء</option>
+                                <label for="doctor_id" class="form-label font-weight-bold tx-12">الطبيب (بحث فوري)</label>
+                                <select name="doctor_id" id="doctor_id" class="form-control form-control-sm select2" data-placeholder="جميع الأطباء (ابحث بالاسم...)">
+                                    <option value="">جميع الأطباء (ابحث بالاسم...)</option>
                                     @foreach($doctors as $doc)
                                     <option value="{{ $doc->id }}" {{ request('doctor_id') == $doc->id ? 'selected' : '' }}>{{ $doc->name }}</option>
                                     @endforeach
                                 </select>
                             </div>
                             <div class="col-md-5">
-                                <label for="service_id" class="form-label font-weight-bold tx-12">الخدمة / الفحص</label>
-                                <select name="service_id" id="service_id" class="form-control form-control-sm">
-                                    <option value="">جميع الخدمات</option>
+                                <label for="service_id" class="form-label font-weight-bold tx-12">الخدمة / الفحص (بحث فوري)</label>
+                                <select name="service_id" id="service_id" class="form-control form-control-sm select2" data-placeholder="جميع الخدمات (ابحث بالاسم...)">
+                                    <option value="">جميع الخدمات (ابحث بالاسم...)</option>
                                     @foreach($services as $srv)
                                     <option value="{{ $srv->id }}" {{ request('service_id') == $srv->id ? 'selected' : '' }}>{{ $srv->namesv }}</option>
                                     @endforeach
@@ -220,9 +226,9 @@
                         <div class="row align-items-end">
                             @if($isAdmin)
                             <div class="col-md-3">
-                                <label for="moh_id" class="form-label font-weight-bold tx-12">الدائرة</label>
-                                <select name="moh_id" id="moh_id" class="form-control form-control-sm">
-                                    <option value="">جميع الدوائر</option>
+                                <label for="moh_id" class="form-label font-weight-bold tx-12">الدائرة (بحث فوري)</label>
+                                <select name="moh_id" id="moh_id" class="form-control form-control-sm select2" data-placeholder="جميع الدوائر (ابحث بالاسم...)">
+                                    <option value="">جميع الدوائر (ابحث بالاسم...)</option>
                                     @foreach($availableMohs as $moh)
                                     <option value="{{ $moh->id }}" {{ request('moh_id') == $moh->id ? 'selected' : '' }}>{{ $moh->mohname }}</option>
                                     @endforeach
@@ -232,9 +238,9 @@
 
                             @if($isAdmin || (is_array($userRoles) && in_array('stat-doh', $userRoles)))
                             <div class="col-md-3">
-                                <label for="fck_id" class="form-label font-weight-bold tx-12">المستشفى</label>
-                                <select name="fck_id" id="fck_id" class="form-control form-control-sm">
-                                    <option value="">جميع المستشفيات</option>
+                                <label for="fck_id" class="form-label font-weight-bold tx-12">المستشفى / المؤسسة (بحث فوري)</label>
+                                <select name="fck_id" id="fck_id" class="form-control form-control-sm select2" data-placeholder="جميع المستشفيات (ابحث بالاسم...)">
+                                    <option value="">جميع المستشفيات (ابحث بالاسم...)</option>
                                     @foreach($availableFcks as $fck)
                                     <option value="{{ $fck->id }}" data-moh-id="{{ $fck->moh_id }}" {{ request('fck_id') == $fck->id ? 'selected' : '' }}>{{ $fck->Fckname }}</option>
                                     @endforeach
@@ -264,6 +270,18 @@
                         </div>
                     </form>
 
+                    @if(!empty($selectedServiceName))
+                    <div class="alert alert-info py-2 px-3 mb-3 d-flex justify-content-between align-items-center no-print">
+                        <div>
+                            <i class="fas fa-stethoscope text-primary me-1"></i>
+                            تقرير مخصص لخدمة: <strong>{{ $selectedServiceName }}</strong>
+                        </div>
+                        <a href="{{ route('private-visit-details.index', request()->except('service_id')) }}" class="btn btn-sm btn-outline-secondary">
+                            <i class="fas fa-times me-1"></i> إلغاء فلتر الخدمة
+                        </a>
+                    </div>
+                    @endif
+
                     <!-- جدول التقرير: صف معتمد كامل لكل مريض -->
                     <div class="table-responsive">
                        <table class="table table-bordered table-hover text-center align-middle" dir="rtl">
@@ -271,10 +289,12 @@
                                 <tr>
                                     <th style="width: 3%;">ت</th>
                                     <th style="width: 6%;">الترقيم السنوي</th>
-                                    <th style="width: 15%;">اسم المريض / الزائر</th>
+                                    <th style="width: {{ empty($selectedServiceName) ? '15%' : '20%' }};">اسم المريض / الزائر</th>
                                     <th style="width: 8%;">الجنسية / الهاتف</th>
+                                    @if(empty($selectedServiceName))
                                     <th style="width: 13%;">الخدمة المقدمة</th>
-                                    <th style="width: 11%;">الطبيب المعالج</th>
+                                    @endif
+                                    <th style="width: {{ empty($selectedServiceName) ? '11%' : '14%' }};">الطبيب المعالج</th>
                                     <th style="width: 9%;">تاريخ الزيارة</th>
                                     <th style="width: 8%;">رقم الوصل</th>
                                     <th style="width: 8%;">تاريخ الوصل</th>
@@ -314,9 +334,11 @@
                                         <div class="tx-10 text-muted" dir="ltr">{{ $visit->visitor_phone ?? $visit->patient_phone }}</div>
                                         @endif
                                     </td>
+                                    @if(empty($selectedServiceName))
                                     <td class="font-weight-bold text-primary text-right">
                                         {{ $visit->serviceSpecialization ? $visit->serviceSpecialization->namesv : '-' }}
                                     </td>
+                                    @endif
                                     <td>{{ $visit->doctor ? $visit->doctor->name : '-' }}</td>
                                     <td>
                                         <div>{{ $visit->visit_date ? $visit->visit_date->format('Y-m-d') : '-' }}</div>
@@ -342,7 +364,7 @@
                                 </tr>
                                 @empty
                                 <tr>
-                                    <td colspan="12" class="text-center text-muted py-4">
+                                    <td colspan="{{ empty($selectedServiceName) ? 12 : 11 }}" class="text-center text-muted py-4">
                                         <i class="fas fa-info-circle me-1"></i> لا توجد بيانات مطابقة للفترة والمعايير المحددة
                                     </td>
                                 </tr>
@@ -351,12 +373,12 @@
                             @if($visits->count() > 0)
                             <tfoot class="bg-light font-weight-bold">
                                 <tr>
-                                    <td colspan="10" class="text-left font-weight-bold">مجموع الصفحة الحالية:</td>
+                                    <td colspan="{{ empty($selectedServiceName) ? 10 : 9 }}" class="text-left font-weight-bold">مجموع الصفحة الحالية:</td>
                                     <td class="font-weight-bold text-primary">{{ number_format($pageServiceFeeTotal, 0) }}</td>
                                     <td class="font-weight-bold text-success">{{ number_format($pageGrandTotal, 0) }} د.ع</td>
                                 </tr>
                                 <tr class="bg-dark text-white">
-                                    <td colspan="10" class="text-left font-weight-bold text-white">المجموع الكلي للفترة المحددة ({{ number_format($totalVisitsCount) }} مريض):</td>
+                                    <td colspan="{{ empty($selectedServiceName) ? 10 : 9 }}" class="text-left font-weight-bold text-white">المجموع الكلي للفترة المحددة ({{ number_format($totalVisitsCount) }} مريض):</td>
                                     <td class="font-weight-bold text-white">{{ number_format($totalServiceFees, 0) }}</td>
                                     <td class="font-weight-bold text-warning">{{ number_format($grandTotalAmount, 0) }} د.ع</td>
                                 </tr>
@@ -395,8 +417,20 @@
 @endsection
 
 @section('js')
+<script src="{{ URL::asset('assets/plugins/select2/js/select2.min.js') }}"></script>
 <script>
     $(document).ready(function() {
+        if ($.fn.select2) {
+            $('.select2').each(function() {
+                $(this).select2({
+                    placeholder: $(this).data('placeholder') || 'اختر...',
+                    allowClear: true,
+                    width: '100%',
+                    dir: 'rtl'
+                });
+            });
+        }
+
         var $mohSelect = $('#moh_id');
         var $fckSelect = $('#fck_id');
         
@@ -408,10 +442,11 @@
                 var currentSelectedFck = $fckSelect.val();
                 
                 $fckSelect.empty();
+                $fckSelect.append('<option value="">جميع المستشفيات (ابحث بالاسم...)</option>');
                 
                 allOptions.each(function() {
                     var optMohId = $(this).attr('data-moh-id');
-                    if (!$(this).val() || !selectedMoh || optMohId == selectedMoh) {
+                    if ($(this).val() && (!selectedMoh || optMohId == selectedMoh)) {
                         $fckSelect.append($(this).clone());
                     }
                 });
@@ -423,10 +458,13 @@
                 } else {
                     $fckSelect.val('');
                 }
+
+                if ($.fn.select2 && $fckSelect.hasClass('select2')) {
+                    $fckSelect.trigger('change.select2');
+                }
             }
             
             $mohSelect.on('change', filterHospitals);
-            filterHospitals();
         }
     });
 </script>

@@ -429,6 +429,10 @@
                                                             <option value="كبرى">كبرى</option>
                                                             <option value="متوسطة">متوسطة</option>
                                                             <option value="صغرى">صغرى</option>
+                                                            <option value="مراقبة">مراقبة</option>
+                                                            <option value="تأجيل عملية">تأجيل عملية</option>
+                                                            <option value="عملية شاملة">عملية شاملة</option>
+                                                            <option value="زراعة قوقعة">زراعة قوقعة</option>
                                                         </select>
                                                     </div>
                                                 </div>

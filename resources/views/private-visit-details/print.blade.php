@@ -109,6 +109,18 @@
             border: 1px solid #bfdbfe;
         }
 
+        .header-service {
+            font-size: 12px;
+            font-weight: bold;
+            color: #065f46;
+            background: #ecfdf5;
+            display: inline-block;
+            margin-top: 5px;
+            padding: 3px 14px;
+            border-radius: 4px;
+            border: 1px solid #a7f3d0;
+        }
+
         /* كروت ملخص المجاميع السريعة قبل الجدول */
         .summary-bar {
             display: flex;
@@ -250,6 +262,13 @@
                 -webkit-print-color-adjust: exact;
                 print-color-adjust: exact;
             }
+            .header-service {
+                background-color: #f0fdf4 !important;
+                color: #065f46 !important;
+                border-color: #059669 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
             .summary-item {
                 background: #f9fafb !important;
                 border-color: #666 !important;
@@ -267,6 +286,9 @@
     <div class="control-bar no-print">
         <div>
             <strong>معاينة الكشف الطباعي المعتمد للزيارات الخارجية</strong>
+            @if(!empty($selectedServiceName))
+                <span style="background: #065f46; color: #fff; padding: 2px 8px; border-radius: 3px; font-size: 11px; margin-right: 8px;">الخدمة: {{ $selectedServiceName }}</span>
+            @endif
             <span style="font-size: 11px; opacity: 0.8; margin-right: 10px;">(إجمالي السجلات في هذا الكشف: {{ number_format($totalCount) }})</span>
         </div>
         <div>
@@ -296,6 +318,13 @@
                     كشف شامل لكافة السجلات
                 @endif
             </div>
+            @if(!empty($selectedServiceName))
+                <div style="margin-top: 5px;">
+                    <div class="header-service">
+                        الخدمة: <strong>{{ $selectedServiceName }}</strong>
+                    </div>
+                </div>
+            @endif
         </div>
 
         <div class="header-col-left">
@@ -335,12 +364,14 @@
         <thead>
             <tr>
                 <th style="width: 3%;">ت</th>
-                <th style="width: 5%;">الترقيم السنوي</th>
-                <th style="width: 15%;">اسم المريض / الزائر</th>
+                <th style="width: 6%;">الترقيم السنوي</th>
+                <th style="width: {{ empty($selectedServiceName) ? '15%' : '20%' }};">اسم المريض / الزائر</th>
                 <th style="width: 6%;">الجنسية</th>
                 <th style="width: 8%;">رقم الهاتف</th>
+                @if(empty($selectedServiceName))
                 <th style="width: 14%;">الخدمة الطبية / الفحص</th>
-                <th style="width: 12%;">الطبيب المعالج</th>
+                @endif
+                <th style="width: {{ empty($selectedServiceName) ? '12%' : '15%' }};">الطبيب المعالج</th>
                 <th style="width: 7%;">تاريخ الزيارة</th>
                 <th style="width: 5%;">الوقت</th>
                 <th style="width: 6%;">رقم الوصل</th>
@@ -363,7 +394,9 @@
                 </td>
                 <td>{{ $visit->visitor_nationality ?? $visit->patient_nationality ?? 'عراقي' }}</td>
                 <td dir="ltr" style="font-size: 9px;">{{ $visit->visitor_phone ?? $visit->patient_phone ?? '-' }}</td>
+                @if(empty($selectedServiceName))
                 <td class="text-right"><strong>{{ $visit->serviceSpecialization ? $visit->serviceSpecialization->namesv : '-' }}</strong></td>
+                @endif
                 <td>{{ $visit->doctor ? $visit->doctor->name : '-' }}</td>
                 <td>{{ $visit->visit_date ? $visit->visit_date->format('Y-m-d') : '-' }}</td>
                 <td>{{ $visit->visit_time ? (is_string($visit->visit_time) ? substr($visit->visit_time, 0, 5) : $visit->visit_time->format('H:i')) : '-' }}</td>
@@ -379,7 +412,7 @@
             </tr>
             @empty
             <tr>
-                <td colspan="14" style="padding: 25px; color: #64748b;">
+                <td colspan="{{ empty($selectedServiceName) ? 14 : 13 }}" style="padding: 25px; color: #64748b;">
                     لا توجد سجلات زيارات مطابقة للفترة المحددة
                 </td>
             </tr>
@@ -388,7 +421,7 @@
         @if($visits->count() > 0)
         <tfoot>
             <tr>
-                <td colspan="12" class="text-left" style="padding: 7px 10px;">
+                <td colspan="{{ empty($selectedServiceName) ? 12 : 11 }}" class="text-left" style="padding: 7px 10px;">
                     المجموع الكلي المعتمد للفترة المحددة ({{ number_format($totalCount) }} مريض):
                 </td>
                 <td>{{ number_format($totalFees, 0) }}</td>

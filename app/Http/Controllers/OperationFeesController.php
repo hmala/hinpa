@@ -47,7 +47,7 @@ class OperationFeesController extends Controller
         $hasSearchCriteria = $request->hasAny(['month', 'year', 'operation_name', 'operation_degree', 'date_from', 'date_to', 'moh_id', 'fck_id']);
 
         // Get operation fees grouped by operation degree
-        $operationDegrees = ['الخاصة', 'فوق الكبرى', 'كبرى', 'متوسطة', 'صغرى'];
+        $operationDegrees = ['الخاصة', 'فوق الكبرى', 'كبرى', 'متوسطة', 'صغرى', 'مراقبة', 'تأجيل عملية', 'عملية شاملة', 'زراعة قوقعة'];
 
         if (!$hasSearchCriteria) {
             // إذا لم يكن هناك بحث، نرسل collections فارغة

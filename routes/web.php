@@ -154,6 +154,7 @@ Route::middleware('auth')->group(function () {
 Route::get('/users/{id}/change-password', [UserController::class, 'showChangePasswordForm'])->name('users.change-password-form');
 Route::patch('/users/{id}/change-password', [UserController::class, 'changePassword'])->name('users.change-password');
 Route::get('/users-export', [UserController::class, 'export'])->name('users.export');
+Route::get('attachments/exceptions/{filename}', [PrivateWingController::class, 'viewExceptionAttachment'])->name('private-wings.exception-attachment');
 
 // QR Code route - بدون middleware للوصول من الموبايل
 Route::get('private-wings/{wing}/qr', [PrivateWingController::class, 'qrView'])->name('private-wings.qr');
