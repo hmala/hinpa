@@ -207,9 +207,9 @@ Route::group(['middleware' => ['auth']], function () {
 Route::post('/getInstitutions', [PrivateWingController::class, 'getInstitutions'])->name('getInstitutions');
 
 Route::group(['middleware' => ['auth']], function () {
-    Route::post('/getSpecializations', [PrivateWingController::class, 'getSpecializations'])->name('getSpecializations');
-    Route::post('/getServicePrice', [PrivateWingController::class, 'getServicePrice'])->name('getServicePrice');    // إضافة مسار جديد لجلب الخدمات الخاصة بالتخصص الفرعي
-    Route::post('/getServiceSpecializations', [PrivateWingController::class, 'getServiceSpecializations'])
+    Route::match(['get', 'post'], '/getSpecializations', [PrivateWingController::class, 'getSpecializations'])->name('getSpecializations');
+    Route::match(['get', 'post'], '/getServicePrice', [PrivateWingController::class, 'getServicePrice'])->name('getServicePrice');    // إضافة مسار جديد لجلب الخدمات الخاصة بالتخصص الفرعي
+    Route::match(['get', 'post'], '/getServiceSpecializations', [PrivateWingController::class, 'getServiceSpecializations'])
         ->name('getServiceSpecializations');    
     // Backup routes
     Route::get('backup', [App\Http\Controllers\BackupController::class, 'index'])->name('backup.index');

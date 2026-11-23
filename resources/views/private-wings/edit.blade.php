@@ -927,7 +927,7 @@ $(document).ready(function() {
             fckrSelect.empty().append('<option value="" disabled selected>--حدد الخدمة--</option>');
 
             $.ajax({
-                url: "{{ route('private-visits.get-specializations') }}",
+                url: "{{ route('private-visits.get-specializations', [], false) }}",
                 type: "GET",
                 data: { section_id: targetSection },
                 success: function(data) {
@@ -1022,7 +1022,7 @@ $(document).ready(function() {
 
             if (serviceId) {
                 $.ajax({
-                    url: "{{ route('private-visits.get-service-specializations') }}",
+                    url: "{{ route('private-visits.get-service-specializations', [], false) }}",
                     type: "GET",
                     data: { service_id: serviceId },
                     success: function(data) {
@@ -1329,7 +1329,7 @@ $(document).ready(function() {
             var service_id = $(this).val();
             if (service_id) {
                 $.ajax({
-                    url: "{{ route('getServicePrice') }}",
+                    url: "{{ route('getServicePrice', [], false) }}",
                     type: "GET",
                     data: {
                         service_id: service_id
@@ -1344,7 +1344,6 @@ $(document).ready(function() {
                     error: function(jqXHR, textStatus, errorThrown) {
                         console.error('خطأ في جلب السعر:', textStatus, errorThrown);
                         $('#service_fee').val('0');
-                        alert('حدث خطأ أثناء جلب سعر الخدمة');
                     }
                 });
             } else {
